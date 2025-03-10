@@ -1,0 +1,43 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode.app
+      
+    - name: Build and Test
+      run: |
+        xcodebuild clean build test \
+          -project baobao.xcodeproj \
+          -scheme baobao \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+          -enableCodeCoverage YES \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+          
+    - name: Upload Test Results
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+        
+    - name: Upload Coverage Results
+      if: success()
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: true
+        verbose: true 
