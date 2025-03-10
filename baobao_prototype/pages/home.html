@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宝宝故事</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        body {
+            background-color: #F2E9DE;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 20;
+        }
+        
+        .baby-info {
+            background-color: #FFD966;
+            border-radius: 30px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 20;
+            max-width: 70%;
+            transition: transform 0.3s;
+        }
+        
+        .baby-info:active {
+            transform: scale(0.98);
+        }
+        
+        .baby-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            margin-right: 12px;
+            background-color: #FFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #F39C12;
+            border: 2px solid #FFF;
+        }
+        
+        .baby-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-right: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #333;
+        }
+        
+        .baby-age {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .settings-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background-color: #000;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .settings-button:active {
+            transform: scale(0.95);
+        }
+        
+        .main-content {
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .welcome-message {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #333;
+            line-height: 1.3;
+        }
+        
+        .new-story-btn {
+            background-color: #000;
+            color: white;
+            border-radius: 30px;
+            padding: 20px 30px;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 350px;
+            animation: pulse 2s infinite;
+            transition: transform 0.3s;
+        }
+        
+        .new-story-btn:active {
+            transform: scale(0.95);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .new-story-btn i {
+            margin-right: 15px;
+            font-size: 30px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 20px 0;
+            width: 100%;
+            text-align: left;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 12px;
+            color: #F39C12;
+            font-size: 28px;
+        }
+        
+        .story-cards {
+            width: 100%;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .story-card {
+            background-color: #FFF;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            transition: transform 0.3s;
+        }
+        
+        .story-card:active {
+            transform: scale(0.98);
+        }
+        
+        .cassette-container {
+            background-color: #4A4A4A;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 180px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .cassette-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
+            z-index: 1;
+        }
+        
+        .cassette {
+            width: 100%;
+            height: 120px;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .cassette-label {
+            color: #FFF;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 15px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .story-info {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .story-time {
+            font-size: 28px;
+            font-weight: 800;
+            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Mono", "Segoe UI Mono", Menlo, Courier, monospace;
+        }
+        
+        .story-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-left: 15px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .story-player {
+            position: relative;
+            background-color: #FFF;
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin: 20px 0 30px;
+            transform: none;
+        }
+        
+        .story-player.active {
+            transform: none;
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .player-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            flex: 1;
+            margin-right: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .close-player {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background-color: #F2E9DE;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #333;
+            border: none;
+        }
+        
+        .player-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .control-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            border: none;
+            transition: transform 0.2s;
+        }
+        
+        .control-button:active {
+            transform: scale(0.95);
+        }
+        
+        .control-button.secondary {
+            background-color: #FFD966;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+        }
+        
+        .control-button.primary {
+            background-color: #000;
+            width: 70px;
+            height: 70px;
+            font-size: 28px;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #F2E9DE;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #FFD966;
+            border-radius: 3px;
+            width: 0;
+            transition: width 0.1s linear;
+        }
+        
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Mono", "Segoe UI Mono", Menlo, Courier, monospace;
+        }
+        
+        /* 动画效果 */
+        .bounce-in {
+            animation: bounceIn 0.6s;
+        }
+        
+        @keyframes bounceIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 修改侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            height: 100%;
+            background-color: #F8F1E7;
+            z-index: 1000;
+            transition: left 0.3s ease;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            padding-bottom: 30px;
+        }
+        
+        .sidebar.open {
+            left: 0;
+        }
+        
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+            display: none;
+        }
+        
+        .sidebar-overlay.open {
+            display: block;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #E5E5E5;
+            text-decoration: none;
+            color: inherit;
+            transition: background-color 0.3s;
+        }
+        
+        .sidebar-header:active {
+            background-color: #F2E9DE;
+        }
+        
+        .sidebar-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background-color: #FFD966;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        
+        .sidebar-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .sidebar-age {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #E5E5E5;
+            text-decoration: none;
+            color: #333;
+        }
+        
+        .sidebar-item.active {
+            background-color: #FFD966;
+        }
+        
+        .sidebar-item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background-color: #F2E9DE;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+        
+        .sidebar-item-text {
+            font-size: 16px;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .sidebar-item-value {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .sidebar-divider {
+            height: 10px;
+            background-color: #F2E9DE;
+            margin: 5px 0;
+        }
+        
+        .sidebar-section-title {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .sidebar-version {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="baby-info" id="toggleSidebar">
+            <div class="baby-avatar">
+                <i class="fas fa-child"></i>
+            </div>
+            <span class="baby-name">乐乐</span>
+            <span class="baby-age">/ 2岁</span>
+        </div>
+        
+        <button class="settings-button" id="toggleSidebarBtn">
+            <i class="fas fa-cog"></i>
+        </button>
+    </div>
+    
+    <div class="main-content">
+        <div class="welcome-message fade-in">
+            乐乐，<br>今天想听什么故事呢？
+        </div>
+        
+        <!-- 故事播放器 -->
+        <div class="story-player" id="storyPlayer">
+            <div class="player-header">
+                <h3 class="player-title">正在播放：太空冒险</h3>
+                <button class="close-player" onclick="closePlayer()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="player-controls">
+                <button class="control-button secondary" onclick="previousTrack()">
+                    <i class="fas fa-backward"></i>
+                </button>
+                
+                <button class="control-button primary" onclick="togglePlay()">
+                    <i class="fas fa-play" id="playIcon"></i>
+                </button>
+                
+                <button class="control-button secondary" onclick="nextTrack()">
+                    <i class="fas fa-forward"></i>
+                </button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+                <div class="time-info">
+                    <span id="currentTime">00:00</span>
+                    <span id="totalTime">06:45</span>
+                </div>
+            </div>
+        </div>
+        
+        <a href="story_themes.html" class="new-story-btn bounce-in">
+            <i class="fas fa-magic"></i>
+            创建新故事
+        </a>
+        
+        <div class="section-title fade-in">
+            <i class="fas fa-history"></i> 最近故事
+        </div>
+        
+        <div class="story-cards">
+            <div class="story-card fade-in" style="animation-delay: 0.1s;">
+                <div class="cassette-container" style="background-image: url('https://images.unsplash.com/photo-1454789548928-9efd52dc4031?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80');">
+                    <div class="cassette">
+                        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="10" y="10" width="180" height="100" rx="10" fill="rgba(255,255,255,0.2)"/>
+                            <circle cx="60" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
+                            <circle cx="140" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
+                            <rect x="50" y="50" width="100" height="20" fill="rgba(255,255,255,0.3)"/>
+                        </svg>
+                    </div>
+                    <div class="cassette-label">太空冒险</div>
+                </div>
+                
+                <div class="story-info">
+                    <div class="story-time">06:45</div>
+                    <div class="story-title">太空冒险</div>
+                </div>
+            </div>
+            
+            <div class="story-card fade-in" style="animation-delay: 0.2s;">
+                <div class="cassette-container" style="background-image: url('https://images.unsplash.com/photo-1582573732277-c5444fa37391?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80');">
+                    <div class="cassette">
+                        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="10" y="10" width="180" height="100" rx="10" fill="rgba(255,255,255,0.2)"/>
+                            <circle cx="60" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
+                            <circle cx="140" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
+                            <rect x="50" y="50" width="100" height="20" fill="rgba(255,255,255,0.3)"/>
+                        </svg>
+                    </div>
+                    <div class="cassette-label">小兔子的奇幻冒险</div>
+                </div>
+                
+                <div class="story-info">
+                    <div class="story-time">05:23</div>
+                    <div class="story-title">小兔子的奇幻冒险</div>
+                </div>
+            </div>
+            
+            <div class="story-card fade-in" style="animation-delay: 0.3s;">
+                <div class="cassette-container" style="background-image: url('https://images.unsplash.com/photo-1580541631971-a0e1561d8a8d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80');">
+                    <div class="cassette">
+                        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="10" y="10" width="180" height="100" rx="10" fill="rgba(255,255,255,0.2)"/>
+                            <circle cx="60" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
+                            <circle cx="140" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
+                            <rect x="50" y="50" width="100" height="20" fill="rgba(255,255,255,0.3)"/>
+                        </svg>
+                    </div>
+                    <div class="cassette-label">海底探险记</div>
+                </div>
+                
+                <div class="story-info">
+                    <div class="story-time">07:15</div>
+                    <div class="story-title">海底探险记</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <a href="profile.html" class="sidebar-header">
+            <div class="sidebar-avatar">
+                <i class="fas fa-child"></i>
+            </div>
+            <div>
+                <div class="sidebar-name">乐乐</div>
+                <div class="sidebar-age">2岁</div>
+            </div>
+        </a>
+        
+        <a href="home.html" class="sidebar-item active">
+            <div class="sidebar-item-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="sidebar-item-text">首页</div>
+        </a>
+        
+        <a href="story_themes.html" class="sidebar-item">
+            <div class="sidebar-item-icon">
+                <i class="fas fa-magic"></i>
+            </div>
+            <div class="sidebar-item-text">创建故事</div>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section-title">设置</div>
+        
+        <div class="sidebar-item">
+            <div class="sidebar-item-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="sidebar-item-text">提醒</div>
+            <div class="sidebar-item-toggle" id="notificationToggle"></div>
+        </div>
+        
+        <div class="sidebar-item">
+            <div class="sidebar-item-icon">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div class="sidebar-item-text">夜间模式</div>
+            <div class="sidebar-item-toggle" id="nightModeToggle"></div>
+        </div>
+        
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section-title">关于</div>
+        
+        <div class="sidebar-item">
+            <div class="sidebar-item-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="sidebar-item-text">版本信息</div>
+            <div class="sidebar-item-value">1.0.0</div>
+        </div>
+    </div>
+    
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <script src="../js/common.js"></script>
+    <script>
+        let isPlaying = false;
+        let progressInterval;
+        
+        // 添加日志函数
+        function log(message, level = 'info') {
+            const timestamp = new Date().toISOString();
+            const prefix = `[${timestamp}][HOME][${level.toUpperCase()}]`;
+            
+            switch(level) {
+                case 'error':
+                    console.error(`${prefix} ${message}`);
+                    break;
+                case 'warn':
+                    console.warn(`${prefix} ${message}`);
+                    break;
+                case 'debug':
+                    console.debug(`${prefix} ${message}`);
+                    break;
+                default:
+                    console.log(`${prefix} ${message}`);
+            }
+            
+            // 在页面上显示日志（仅在调试模式下）
+            if (window.location.search.includes('debug=true')) {
+                const logContainer = document.getElementById('logContainer') || createLogContainer();
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${level}`;
+                logEntry.textContent = `${prefix} ${message}`;
+                logContainer.appendChild(logEntry);
+                
+                // 保持最新日志可见
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        }
+        
+        function createLogContainer() {
+            const container = document.createElement('div');
+            container.id = 'logContainer';
+            container.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; height: 150px; background: rgba(0,0,0,0.8); color: white; overflow-y: auto; z-index: 9999; font-family: monospace; font-size: 12px; padding: 10px;';
+            document.body.appendChild(container);
+            
+            // 添加样式
+            const style = document.createElement('style');
+            style.textContent = `
+                .log-entry { margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+                .log-error { color: #ff5252; }
+                .log-warn { color: #ffbc00; }
+                .log-debug { color: #8bc34a; }
+            `;
+            document.head.appendChild(style);
+            
+            return container;
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM内容加载完成，开始初始化页面');
+            
+            try {
+                log('初始化故事卡片');
+                initializeStoryCards();
+                
+                log('初始化侧边栏');
+                initializeSidebar();
+                
+                log('检查URL参数');
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('debug')) {
+                    log('调试模式已启用', 'debug');
+                }
+                
+                log('页面初始化完成');
+            } catch (error) {
+                log(`页面初始化失败: ${error.message}`, 'error');
+                log(`错误堆栈: ${error.stack}`, 'error');
+            }
+            
+            // 检查DOM元素是否正确加载
+            validateDOMElements();
+        });
+        
+        // 验证关键DOM元素
+        function validateDOMElements() {
+            log('验证关键DOM元素');
+            
+            const criticalElements = [
+                { id: 'toggleSidebar', name: '宝宝信息栏' },
+                { id: 'toggleSidebarBtn', name: '设置按钮' },
+                { id: 'storyPlayer', name: '故事播放器' },
+                { id: 'sidebar', name: '侧边栏' },
+                { id: 'sidebarOverlay', name: '侧边栏遮罩' }
+            ];
+            
+            let allValid = true;
+            
+            criticalElements.forEach(element => {
+                const domElement = document.getElementById(element.id);
+                if (!domElement) {
+                    log(`关键元素未找到: ${element.name} (ID: ${element.id})`, 'error');
+                    allValid = false;
+                } else {
+                    log(`已找到元素: ${element.name} (ID: ${element.id})`, 'debug');
+                }
+            });
+            
+            if (allValid) {
+                log('所有关键DOM元素验证通过');
+            } else {
+                log('DOM元素验证失败，页面可能无法正常工作', 'warn');
+            }
+            
+            // 检查样式是否正确应用
+            validateStyles();
+        }
+        
+        // 验证关键样式
+        function validateStyles() {
+            log('验证关键样式');
+            
+            try {
+                const bodyBgColor = getComputedStyle(document.body).backgroundColor;
+                log(`Body背景色: ${bodyBgColor}`, 'debug');
+                
+                const mainContent = document.querySelector('.main-content');
+                if (mainContent) {
+                    const mainContentDisplay = getComputedStyle(mainContent).display;
+                    log(`主内容区display: ${mainContentDisplay}`, 'debug');
+                } else {
+                    log('未找到主内容区元素', 'error');
+                }
+                
+                // 检查视口尺寸
+                log(`视口宽度: ${window.innerWidth}px, 高度: ${window.innerHeight}px`, 'debug');
+            } catch (error) {
+                log(`样式验证失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 初始化故事卡片
+        function initializeStoryCards() {
+            const storyCards = document.querySelectorAll('.story-card');
+            log(`找到 ${storyCards.length} 个故事卡片`);
+            
+            storyCards.forEach((card, index) => {
+                log(`初始化故事卡片 #${index + 1}`);
+                
+                card.addEventListener('click', () => {
+                    try {
+                        const title = card.querySelector('.story-title').textContent;
+                        const time = card.querySelector('.story-time').textContent;
+                        log(`点击故事卡片: "${title}", 时长: ${time}`);
+                        playStory(title, time);
+                    } catch (error) {
+                        log(`故事卡片点击处理失败: ${error.message}`, 'error');
+                    }
+                });
+            });
+        }
+        
+        // 初始化侧边栏
+        function initializeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+            const toggleSidebarProfile = document.getElementById('toggleSidebar');
+            
+            if (!sidebar || !sidebarOverlay) {
+                log('侧边栏或遮罩元素未找到', 'error');
+                return;
+            }
+            
+            if (!toggleSidebarBtn || !toggleSidebarProfile) {
+                log('侧边栏触发按钮未找到', 'error');
+                return;
+            }
+            
+            log('设置侧边栏事件监听器');
+            
+            // 点击设置按钮打开侧边栏
+            toggleSidebarBtn.addEventListener('click', () => {
+                log('点击设置按钮，打开侧边栏');
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('open');
+            });
+            
+            // 点击头像打开侧边栏
+            toggleSidebarProfile.addEventListener('click', () => {
+                log('点击宝宝信息，打开侧边栏');
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('open');
+            });
+            
+            // 点击遮罩层关闭侧边栏
+            sidebarOverlay.addEventListener('click', () => {
+                log('点击遮罩层，关闭侧边栏');
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('open');
+            });
+        }
+        
+        // 播放故事
+        function playStory(title, totalTime) {
+            log(`开始播放故事: "${title}", 总时长: ${totalTime}`);
+            
+            const player = document.getElementById('storyPlayer');
+            if (!player) {
+                log('未找到故事播放器元素', 'error');
+                return;
+            }
+            
+            try {
+                player.querySelector('.player-title').textContent = title;
+                player.querySelector('#totalTime').textContent = totalTime;
+                player.querySelector('#currentTime').textContent = '00:00';
+                player.querySelector('#progressBar').style.width = '0%';
+                
+                // 重置播放状态
+                isPlaying = false;
+                clearInterval(progressInterval);
+                const playIcon = document.getElementById('playIcon');
+                if (playIcon) {
+                    playIcon.classList.remove('fa-pause');
+                    playIcon.classList.add('fa-play');
+                } else {
+                    log('未找到播放图标元素', 'warn');
+                }
+                
+                // 显示播放器
+                player.classList.add('active');
+                log('故事播放器已激活');
+            } catch (error) {
+                log(`播放故事失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 关闭播放器
+        function closePlayer() {
+            log('关闭故事播放器');
+            
+            const player = document.getElementById('storyPlayer');
+            if (!player) {
+                log('未找到故事播放器元素', 'error');
+                return;
+            }
+            
+            player.classList.remove('active');
+            
+            // 停止播放
+            isPlaying = false;
+            clearInterval(progressInterval);
+            const playIcon = document.getElementById('playIcon');
+            if (playIcon) {
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+            }
+            
+            log('故事播放器已关闭');
+        }
+        
+        // 切换播放/暂停
+        function togglePlay() {
+            const playIcon = document.getElementById('playIcon');
+            if (!playIcon) {
+                log('未找到播放图标元素', 'error');
+                return;
+            }
+            
+            isPlaying = !isPlaying;
+            log(`切换播放状态: ${isPlaying ? '播放' : '暂停'}`);
+            
+            if (isPlaying) {
+                playIcon.classList.remove('fa-play');
+                playIcon.classList.add('fa-pause');
+                simulateProgress();
+                showToast('开始播放');
+            } else {
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+                clearInterval(progressInterval);
+                showToast('暂停播放');
+            }
+        }
+        
+        // 上一段
+        function previousTrack() {
+            log('切换到上一段');
+            showToast('切换到上一段');
+        }
+        
+        // 下一段
+        function nextTrack() {
+            log('切换到下一段');
+            showToast('切换到下一段');
+        }
+        
+        // 模拟进度
+        function simulateProgress() {
+            log('开始模拟播放进度');
+            
+            const progressBar = document.getElementById('progressBar');
+            const currentTimeEl = document.getElementById('currentTime');
+            const totalTimeEl = document.getElementById('totalTime');
+            
+            if (!progressBar || !currentTimeEl || !totalTimeEl) {
+                log('未找到进度条或时间显示元素', 'error');
+                return;
+            }
+            
+            try {
+                // 解析总时间
+                const [minutes, seconds] = totalTimeEl.textContent.split(':').map(Number);
+                const totalSeconds = minutes * 60 + seconds;
+                let currentSeconds = 0;
+                
+                log(`总时长: ${minutes}分${seconds}秒 (${totalSeconds}秒)`);
+                
+                clearInterval(progressInterval);
+                progressInterval = setInterval(() => {
+                    if (!isPlaying) return;
+                    
+                    currentSeconds++;
+                    const progress = (currentSeconds / totalSeconds) * 100;
+                    
+                    // 更新进度条
+                    progressBar.style.width = `${progress}%`;
+                    
+                    // 更新当前时间
+                    const currentMinutes = Math.floor(currentSeconds / 60);
+                    const currentSecs = currentSeconds % 60;
+                    currentTimeEl.textContent = `${String(currentMinutes).padStart(2, '0')}:${String(currentSecs).padStart(2, '0')}`;
+                    
+                    // 每10秒记录一次进度
+                    if (currentSeconds % 10 === 0) {
+                        log(`播放进度: ${Math.round(progress)}% (${currentMinutes}:${currentSecs}/${minutes}:${seconds})`, 'debug');
+                    }
+                    
+                    // 检查是否播放完成
+                    if (currentSeconds >= totalSeconds) {
+                        log('播放完成');
+                        clearInterval(progressInterval);
+                        isPlaying = false;
+                        const playIcon = document.getElementById('playIcon');
+                        if (playIcon) {
+                            playIcon.classList.remove('fa-pause');
+                            playIcon.classList.add('fa-play');
+                        }
+                        showToast('播放完成');
+                    }
+                }, 1000);
+            } catch (error) {
+                log(`模拟进度失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 显示Toast消息
+        function showToast(message) {
+            log(`显示Toast消息: "${message}"`);
+            
+            // 检查common.js是否提供了showToast函数
+            if (typeof window.showToast === 'function') {
+                window.showToast(message);
+            } else {
+                // 如果没有，创建一个简单的Toast实现
+                let toast = document.getElementById('toast');
+                
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'toast';
+                    toast.style.cssText = 'position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background-color: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; z-index: 9999; font-size: 16px; transition: opacity 0.3s;';
+                    document.body.appendChild(toast);
+                }
+                
+                toast.textContent = message;
+                toast.style.opacity = '1';
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                }, 2000);
+            }
+        }
+        
+        // 添加页面加载完成日志
+        window.addEventListener('load', function() {
+            log('页面完全加载完成，包括所有依赖资源');
+            
+            // 检查是否有错误
+            if (document.querySelectorAll('.log-error').length > 0) {
+                log('页面加载过程中发现错误，请检查上方日志', 'warn');
+            }
+        });
+        
+        // 捕获全局错误
+        window.onerror = function(message, source, lineno, colno, error) {
+            log(`全局错误: ${message} (${source}:${lineno}:${colno})`, 'error');
+            return false;
+        };
+        
+        // 捕获未处理的Promise错误
+        window.addEventListener('unhandledrejection', function(event) {
+            log(`未处理的Promise错误: ${event.reason}`, 'error');
+        });
+    </script>
+</body>
+</html> 

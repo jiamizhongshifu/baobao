@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>故事生成 - 宝宝故事</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        body {
+            background-color: #F2E9DE;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .back-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background-color: #000;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 20px;
+            text-align: center;
+            color: #333;
+        }
+        
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+        }
+        
+        .step-indicator {
+            width: 50px;
+            height: 10px;
+            background-color: #E5E5EA;
+            margin: 0 5px;
+            border-radius: 5px;
+        }
+        
+        .step-indicator.active {
+            background-color: #000;
+            width: 70px;
+        }
+        
+        .theme-container {
+            background-color: #FFF;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 0 20px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .theme-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background-color: #FFECB3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-right: 15px;
+            color: #F39C12;
+        }
+        
+        .theme-details {
+            flex: 1;
+        }
+        
+        .theme-name {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .theme-description {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 30px 20px 15px;
+            color: #333;
+        }
+        
+        .options-container {
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+        
+        .option-card {
+            background-color: #FFF;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+        
+        .option-card:active {
+            transform: scale(0.98);
+        }
+        
+        .option-card.selected {
+            border: 3px solid #FF9A9E;
+        }
+        
+        .option-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background-color: #F2E9DE;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 15px;
+            color: #333;
+        }
+        
+        .option-details {
+            flex: 1;
+        }
+        
+        .option-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .option-description {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .generate-button {
+            background-color: #000;
+            color: white;
+            border-radius: 30px;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            margin: 30px auto;
+            display: block;
+            text-align: center;
+        }
+        
+        .loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+        
+        .loading-animation {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+        
+        .loading-text {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .loading-subtext {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        .loading-progress {
+            width: 80%;
+            height: 6px;
+            background-color: #E5E5EA;
+            border-radius: 3px;
+            margin-top: 30px;
+            overflow: hidden;
+        }
+        
+        .loading-bar {
+            height: 100%;
+            width: 30%;
+            background-color: #FF9A9E;
+            border-radius: 3px;
+            animation: progress 2s infinite linear;
+        }
+        
+        @keyframes progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="story_themes.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+    
+    <h1 class="page-title">创建故事</h1>
+    
+    <div class="step-indicators">
+        <div class="step-indicator"></div>
+        <div class="step-indicator active"></div>
+    </div>
+    
+    <div class="theme-container">
+        <div class="theme-icon" id="themeIcon">
+            <i class="fas fa-magic"></i>
+        </div>
+        <div class="theme-details">
+            <div class="theme-name" id="themeName">魔法世界</div>
+            <div class="theme-description">创造一个充满魔法的奇幻故事</div>
+        </div>
+    </div>
+    
+    <h2 class="section-title">选择故事长度</h2>
+    
+    <div class="options-container" id="lengthOptions">
+        <div class="option-card" data-length="short">
+            <div class="option-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="option-details">
+                <div class="option-title">短篇</div>
+                <div class="option-description">约3分钟 · 适合睡前快速阅读</div>
+            </div>
+        </div>
+        
+        <div class="option-card selected" data-length="medium">
+            <div class="option-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="option-details">
+                <div class="option-title">中篇</div>
+                <div class="option-description">约5分钟 · 标准故事长度</div>
+            </div>
+        </div>
+        
+        <div class="option-card" data-length="long">
+            <div class="option-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="option-details">
+                <div class="option-title">长篇</div>
+                <div class="option-description">约8分钟 · 详细的冒险故事</div>
+            </div>
+        </div>
+    </div>
+    
+    <h2 class="section-title">选择讲述语音</h2>
+    
+    <div class="options-container" id="voiceOptions">
+        <div class="option-card selected" data-voice="female">
+            <div class="option-icon">
+                <i class="fas fa-female"></i>
+            </div>
+            <div class="option-details">
+                <div class="option-title">萍萍阿姨</div>
+                <div class="option-description">温柔亲切的女声，适合睡前故事</div>
+            </div>
+        </div>
+        
+        <div class="option-card" data-voice="male">
+            <div class="option-icon">
+                <i class="fas fa-male"></i>
+            </div>
+            <div class="option-details">
+                <div class="option-title">大树叔叔</div>
+                <div class="option-description">稳重有力的男声，适合冒险故事</div>
+            </div>
+        </div>
+        
+        <div class="option-card" data-voice="child">
+            <div class="option-icon">
+                <i class="fas fa-child"></i>
+            </div>
+            <div class="option-details">
+                <div class="option-title">豆豆</div>
+                <div class="option-description">活泼可爱的儿童声音</div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="generate-button" id="generateButton">
+        开始生成故事
+    </button>
+    
+    <div class="loading-container" id="loadingContainer">
+        <svg class="loading-animation" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="90" fill="#F2E9DE" />
+            <path d="M100,20 C55.8,20 20,55.8 20,100 C20,144.2 55.8,180 100,180 C144.2,180 180,144.2 180,100 C180,55.8 144.2,20 100,20 Z M100,160 C66.9,160 40,133.1 40,100 C40,66.9 66.9,40 100,40 C133.1,40 160,66.9 160,100 C160,133.1 133.1,160 100,160 Z" fill="#FF9A9E"/>
+            <circle cx="75" cy="80" r="10" fill="#333" />
+            <circle cx="125" cy="80" r="10" fill="#333" />
+            <path d="M70,120 C70,120 85,140 100,140 C115,140 130,120 130,120" stroke="#333" stroke-width="6" fill="none" stroke-linecap="round" />
+        </svg>
+        
+        <div class="loading-text">正在创作故事...</div>
+        <div class="loading-subtext">AI正在为乐乐创作一个精彩的故事，请稍等片刻</div>
+        
+        <div class="loading-progress">
+            <div class="loading-bar"></div>
+        </div>
+    </div>
+    
+    <script src="../js/common.js"></script>
+    <script>
+        // 获取URL中的主题参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const theme = urlParams.get('theme') || '魔法世界';
+        
+        // 设置主题显示
+        const themeIcon = document.querySelector('#themeIcon i');
+        const themeName = document.getElementById('themeName');
+        themeName.textContent = theme;
+        
+        // 根据主题设置图标
+        switch(theme) {
+            case '魔法世界':
+                themeIcon.className = 'fas fa-dragon';
+                break;
+            case '动物朋友':
+                themeIcon.className = 'fas fa-paw';
+                break;
+            case '太空冒险':
+                themeIcon.className = 'fas fa-rocket';
+                break;
+            case '公主王子':
+                themeIcon.className = 'fas fa-crown';
+                break;
+            case '海底世界':
+                themeIcon.className = 'fas fa-water';
+                break;
+            case '恐龙时代':
+                themeIcon.className = 'fas fa-dinosaur';
+                break;
+            default:
+                themeIcon.className = 'fas fa-magic';
+        }
+        
+        // 故事长度选择
+        const lengthOptions = document.querySelectorAll('#lengthOptions .option-card');
+        lengthOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                lengthOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                const length = option.getAttribute('data-length');
+                const lengthName = option.querySelector('.option-title').textContent;
+                showToast(`已选择${lengthName}故事`);
+            });
+        });
+        
+        // 语音选择
+        const voiceOptions = document.querySelectorAll('#voiceOptions .option-card');
+        voiceOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                voiceOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                const voice = option.getAttribute('data-voice');
+                const voiceName = option.querySelector('.option-title').textContent;
+                showToast(`已选择${voiceName}语音`);
+            });
+        });
+        
+        // 生成故事按钮
+        document.getElementById('generateButton').addEventListener('click', () => {
+            const selectedLength = document.querySelector('#lengthOptions .option-card.selected').getAttribute('data-length');
+            const selectedVoice = document.querySelector('#voiceOptions .option-card.selected').getAttribute('data-voice');
+            
+            // 显示加载动画
+            document.getElementById('loadingContainer').style.display = 'flex';
+            
+            // 模拟生成过程，3秒后返回首页
+            setTimeout(() => {
+                // 生成完成后直接返回首页
+                window.location.href = 'home.html';
+            }, 3000);
+        });
+    </script>
+</body>
+</html> 

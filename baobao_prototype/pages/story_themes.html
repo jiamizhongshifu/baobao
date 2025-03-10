@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择故事主题 - 宝宝故事</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        body {
+            background-color: #F2E9DE;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .back-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background-color: #000;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .baby-info {
+            background-color: #FFD966;
+            border-radius: 30px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .baby-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+        
+        .baby-age {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 20px;
+            text-align: center;
+            color: #333;
+        }
+        
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+        }
+        
+        .step-indicator {
+            width: 50px;
+            height: 10px;
+            background-color: #E5E5EA;
+            margin: 0 5px;
+            border-radius: 5px;
+        }
+        
+        .step-indicator.active {
+            background-color: #000;
+            width: 70px;
+        }
+        
+        .theme-instruction {
+            font-size: 18px;
+            color: #666;
+            text-align: center;
+            margin: 0 20px 20px;
+        }
+        
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 0 20px;
+            margin-bottom: 100px;
+        }
+        
+        .theme-card {
+            background-color: #FFF;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            transition: all 0.3s;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .theme-card:active {
+            transform: scale(0.95);
+        }
+        
+        .theme-card.selected {
+            border: 3px solid #FF9A9E;
+            transform: scale(1.05);
+        }
+        
+        .theme-image {
+            height: 120px;
+            width: 100%;
+            object-fit: cover;
+            background-color: #FFECB3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .theme-image i {
+            font-size: 48px;
+            color: #F39C12;
+        }
+        
+        .theme-title {
+            padding: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: #333;
+        }
+        
+        .theme-card.recommended .theme-image::after {
+            content: "推荐";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #FF9A9E;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 30px 30px 0 0;
+            z-index: 10;
+        }
+        
+        .story-credits {
+            background-color: #F2E9DE;
+            border-radius: 20px;
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .credits-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #F39C12;
+        }
+        
+        .credits-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .start-button {
+            background-color: #000;
+            color: white;
+            border-radius: 30px;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+        }
+        
+        .start-button i {
+            margin-left: 10px;
+            font-size: 20px;
+        }
+        
+        /* 动画效果 */
+        .bounce-in {
+            animation: bounceIn 0.6s;
+        }
+        
+        @keyframes bounceIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="home.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        
+        <div class="baby-info">
+            <span class="baby-name">乐乐</span>
+            <span class="baby-age">/ 2岁</span>
+        </div>
+    </div>
+    
+    <h1 class="page-title">选择故事主题</h1>
+    
+    <div class="step-indicators">
+        <div class="step-indicator active"></div>
+        <div class="step-indicator"></div>
+        <div class="step-indicator"></div>
+    </div>
+    
+    <div class="theme-instruction">
+        请选择一个故事主题，让我们开始创造吧！
+    </div>
+    
+    <div class="theme-grid">
+        <div class="theme-card recommended bounce-in" data-delay="100">
+            <div class="theme-image">
+                <i class="fas fa-dragon"></i>
+            </div>
+            <div class="theme-title">魔法世界</div>
+        </div>
+        
+        <div class="theme-card bounce-in" data-delay="200">
+            <div class="theme-image">
+                <i class="fas fa-paw"></i>
+            </div>
+            <div class="theme-title">动物朋友</div>
+        </div>
+        
+        <div class="theme-card bounce-in" data-delay="300">
+            <div class="theme-image">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <div class="theme-title">太空冒险</div>
+        </div>
+        
+        <div class="theme-card bounce-in" data-delay="400">
+            <div class="theme-image">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="theme-title">公主王子</div>
+        </div>
+        
+        <div class="theme-card bounce-in" data-delay="500">
+            <div class="theme-image">
+                <i class="fas fa-water"></i>
+            </div>
+            <div class="theme-title">海底世界</div>
+        </div>
+        
+        <div class="theme-card bounce-in" data-delay="600">
+            <div class="theme-image">
+                <i class="fas fa-dinosaur"></i>
+            </div>
+            <div class="theme-title">恐龙时代</div>
+        </div>
+    </div>
+    
+    <div class="bottom-bar">
+        <div class="story-credits">
+            <div class="credits-amount">2</div>
+            <div class="credits-label">故事卡余额</div>
+        </div>
+        
+        <button class="start-button" id="createStoryBtn" disabled>
+            下一步 <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+    
+    <script src="../js/common.js"></script>
+    <script>
+        // 主题卡片点击事件
+        const themeCards = document.querySelectorAll('.theme-card');
+        const startButton = document.getElementById('createStoryBtn');
+        
+        // 应用弹出动画，错开时间
+        document.addEventListener('DOMContentLoaded', function() {
+            themeCards.forEach(card => {
+                const delay = parseInt(card.getAttribute('data-delay'));
+                setTimeout(() => {
+                    card.classList.add('bounce-in');
+                }, delay);
+            });
+        });
+        
+        themeCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // 移除其他卡片的选中状态
+                themeCards.forEach(c => c.classList.remove('selected'));
+                // 添加当前卡片的选中状态
+                card.classList.add('selected');
+                
+                const themeTitle = card.querySelector('.theme-title').textContent;
+                showToast(`已选择"${themeTitle}"主题`);
+                
+                // 启用下一步按钮
+                startButton.removeAttribute('disabled');
+                startButton.style.opacity = 1;
+            });
+        });
+        
+        // 下一步按钮点击事件
+        startButton.addEventListener('click', () => {
+            const selectedCard = document.querySelector('.theme-card.selected');
+            if (selectedCard) {
+                // 保存选择的主题，直接跳转到故事生成页
+                const theme = selectedCard.querySelector('.theme-title').textContent;
+                window.location.href = `story_generation.html?theme=${encodeURIComponent(theme)}`;
+            } else {
+                showToast('请先选择一个故事主题');
+            }
+        });
+        
+        // 初始化"下一步"按钮
+        startButton.style.opacity = 0.5;
+    </script>
+</body>
+</html> 

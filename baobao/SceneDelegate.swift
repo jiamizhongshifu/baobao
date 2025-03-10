@@ -6,45 +6,58 @@
 //
 
 import UIKit
+import os.log
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
+    private let logger = Logger(subsystem: "com.baobao.app", category: "scene")
     var window: UIWindow?
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        guard let windowScene = (scene as? UIWindowScene) else { 
+            logger.error("❌ 无法获取窗口场景")
+            return 
+        }
+        
+        logger.info("🔄 开始配置窗口场景")
+        
+        // 创建窗口实例
+        window = UIWindow(windowScene: windowScene)
+        
+        // 创建首页视图控制器
+        let homeViewController = HomeViewController()
+        
+        // 创建导航控制器并设置首页为根视图控制器
+        let navigationController = UINavigationController(rootViewController: homeViewController)
+        
+        // 设置导航控制器为窗口的根视图控制器
+        window?.rootViewController = navigationController
+        
+        // 使窗口可见
+        window?.makeKeyAndVisible()
+        
+        logger.info("✅ 窗口场景配置完成")
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
-        // Called as the scene is being released by the system.
-        // This occurs shortly after the scene enters the background, or when its session is discarded.
-        // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+        logger.info("场景已断开连接")
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state.
-        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+        logger.info("场景变为活跃状态")
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state.
-        // This may occur due to temporary interruptions (ex. an incoming phone call).
+        logger.info("场景即将进入非活跃状态")
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground.
-        // Use this method to undo the changes made on entering the background.
+        logger.info("场景即将进入前台")
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
+        logger.info("场景已进入后台")
     }
 
 

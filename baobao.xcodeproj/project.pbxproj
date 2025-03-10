@@ -27,24 +27,20 @@
 		8BAA015B2D7E839000BD5BB3 /* baobao.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = baobao.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BAA01712D7E839200BD5BB3 /* baobaoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = baobaoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BAA017B2D7E839200BD5BB3 /* baobaoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = baobaoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8BEE65A22D7F498E00B885F5 /* common.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = common.css; sourceTree = "<group>"; };
+		8BEE65A72D7F498E00B885F5 /* common.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = common.js; sourceTree = "<group>"; };
+		8BEE65A92D7F498E00B885F5 /* home.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = home.html; sourceTree = "<group>"; };
+		8BEE65AA2D7F498E00B885F5 /* membership.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = membership.html; sourceTree = "<group>"; };
+		8BEE65AB2D7F498E00B885F5 /* profile.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = profile.html; sourceTree = "<group>"; };
+		8BEE65AC2D7F498E00B885F5 /* story_generation.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = story_generation.html; sourceTree = "<group>"; };
+		8BEE65AD2D7F498E00B885F5 /* story_themes.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = story_themes.html; sourceTree = "<group>"; };
+		8BEE65AE2D7F498E00B885F5 /* welcome.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = welcome.html; sourceTree = "<group>"; };
+		8BEE65B02D7F498E00B885F5 /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8BAA01832D7E839200BD5BB3 /* Exceptions for "baobao" folder in "baobao" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 8BAA015A2D7E839000BD5BB3 /* baobao */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8BAA015D2D7E839000BD5BB3 /* baobao */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				8BAA01832D7E839200BD5BB3 /* Exceptions for "baobao" folder in "baobao" target */,
-			);
 			path = baobao;
 			sourceTree = "<group>";
 		};
@@ -88,6 +84,7 @@
 		8BAA01522D7E839000BD5BB3 = {
 			isa = PBXGroup;
 			children = (
+				8BEE65B12D7F498E00B885F5 /* baobao_prototype */,
 				8BAA015D2D7E839000BD5BB3 /* baobao */,
 				8BAA01742D7E839200BD5BB3 /* baobaoTests */,
 				8BAA017E2D7E839200BD5BB3 /* baobaoUITests */,
@@ -105,6 +102,70 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		8BEE65A32D7F498E00B885F5 /* css */ = {
+			isa = PBXGroup;
+			children = (
+				8BEE65A22D7F498E00B885F5 /* common.css */,
+			);
+			path = css;
+			sourceTree = "<group>";
+		};
+		8BEE65A42D7F498E00B885F5 /* characters */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = characters;
+			sourceTree = "<group>";
+		};
+		8BEE65A52D7F498E00B885F5 /* narrators */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = narrators;
+			sourceTree = "<group>";
+		};
+		8BEE65A62D7F498E00B885F5 /* img */ = {
+			isa = PBXGroup;
+			children = (
+				8BEE65A42D7F498E00B885F5 /* characters */,
+				8BEE65A52D7F498E00B885F5 /* narrators */,
+			);
+			path = img;
+			sourceTree = "<group>";
+		};
+		8BEE65A82D7F498E00B885F5 /* js */ = {
+			isa = PBXGroup;
+			children = (
+				8BEE65A72D7F498E00B885F5 /* common.js */,
+			);
+			path = js;
+			sourceTree = "<group>";
+		};
+		8BEE65AF2D7F498E00B885F5 /* pages */ = {
+			isa = PBXGroup;
+			children = (
+				8BEE65A92D7F498E00B885F5 /* home.html */,
+				8BEE65AA2D7F498E00B885F5 /* membership.html */,
+				8BEE65AB2D7F498E00B885F5 /* profile.html */,
+				8BEE65AC2D7F498E00B885F5 /* story_generation.html */,
+				8BEE65AD2D7F498E00B885F5 /* story_themes.html */,
+				8BEE65AE2D7F498E00B885F5 /* welcome.html */,
+			);
+			path = pages;
+			sourceTree = "<group>";
+		};
+		8BEE65B12D7F498E00B885F5 /* baobao_prototype */ = {
+			isa = PBXGroup;
+			children = (
+				8BEE65A32D7F498E00B885F5 /* css */,
+				8BEE65A62D7F498E00B885F5 /* img */,
+				8BEE65A82D7F498E00B885F5 /* js */,
+				8BEE65AF2D7F498E00B885F5 /* pages */,
+				8BEE65B02D7F498E00B885F5 /* index.html */,
+			);
+			path = baobao_prototype;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -114,7 +175,6 @@
 			buildPhases = (
 				8BAA01572D7E839000BD5BB3 /* Sources */,
 				8BAA01582D7E839000BD5BB3 /* Frameworks */,
-				8BAA01592D7E839000BD5BB3 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -221,13 +281,6 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		8BAA01592D7E839000BD5BB3 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8BAA016F2D7E839200BD5BB3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -293,8 +346,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = baobao/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -321,8 +372,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = baobao/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
