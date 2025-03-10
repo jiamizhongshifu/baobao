@@ -1,0 +1,78 @@
+# Xcode
+## User settings
+xcuserdata/
+*.xcuserstate
+
+## Obj-C/Swift specific
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# CocoaPods
+Pods/
+*.xcworkspace
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+injected_container.swift
+
+# OS X temporary files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode build files
+DerivedData/
+build/
+
+# Xcode temporary files
+*~.nib
+*.swp
+*.lock
+profile
+
+# Xcode project files
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xcworkspace
+!default.xcworkspace
+xcuserdata
+*.moved-aside
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Project specific
+baobao/test.html
+*.bak
+*.bak2
+reference/
+CursorMind/ 
