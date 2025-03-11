@@ -1,26 +1,104 @@
 import UIKit
 import WebKit
 import os.log
+import Network
 
 class HomeViewController: UIViewController {
     // 创建专用的日志记录器
     private let logger = Logger(subsystem: "com.baobao.app", category: "home-view")
     
+    // 网络监控
+    private let monitor = NWPathMonitor()
+    private var isNetworkAvailable = true
+    
+    // 重试相关
+    private var retryCount = 0
+    private let maxRetryCount = 3
+    private let retryInterval: TimeInterval = 2.0
+    
     // MARK: - UI Components
     private lazy var webView: WKWebView = {
         let configuration = WKWebViewConfiguration()
+        
+        // 配置进程池
+        let processPool = WKProcessPool()
+        configuration.processPool = processPool
+        
+        // 配置媒体播放
         configuration.allowsInlineMediaPlayback = true
-        configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypes.all
         
         // 添加输入系统相关配置
         let preferences = WKPreferences()
         preferences.javaScriptEnabled = true
+        preferences.javaScriptCanOpenWindowsAutomatically = false
         configuration.preferences = preferences
         
-        // 禁用文本建议以避免RTIInputSystemClient警告
-        let dataStore = WKWebsiteDataStore.nonPersistent()
-        configuration.websiteDataStore = dataStore
+        // 使用持久化存储以提高性能
+        configuration.websiteDataStore = WKWebsiteDataStore.default()
         
+        // 清理并重新设置用户内容控制器
+        let userContentController = WKUserContentController()
+        configuration.userContentController = userContentController
+        
+        // 添加错误处理脚本
+        let errorHandlingScript = WKUserScript(
+            source: """
+            window.onerror = function(message, source, lineno, colno, error) {
+                window.webkit.messageHandlers.errorHandler.postMessage({
+                    type: 'window.onerror',
+                    message: message,
+                    source: source,
+                    lineno: lineno,
+                    colno: colno,
+                    error: error ? error.toString() : null
+                });
+                return true;
+            };
+
+            // 重写console.error
+            console.error = (function(oldError) {
+                return function() {
+                    window.webkit.messageHandlers.errorHandler.postMessage({
+                        type: 'console.error',
+                        arguments: Array.from(arguments).map(String)
+                    });
+                    oldError.apply(console, arguments);
+                }
+            })(console.error);
+
+            // 添加输入监听
+            document.addEventListener('focusin', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    window.webkit.messageHandlers.inputHandler.postMessage({
+                        type: 'focus',
+                        id: e.target.id,
+                        tagName: e.target.tagName
+                    });
+                }
+            }, { passive: true });
+
+            // 添加网络错误监听
+            window.addEventListener('offline', function() {
+                window.webkit.messageHandlers.errorHandler.postMessage({
+                    type: 'network',
+                    status: 'offline'
+                });
+            });
+
+            window.addEventListener('online', function() {
+                window.webkit.messageHandlers.errorHandler.postMessage({
+                    type: 'network',
+                    status: 'online'
+                });
+            });
+            """,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+        userContentController.addUserScript(errorHandlingScript)
+        
+        // 创建WebView
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
         webView.uiDelegate = self
@@ -29,6 +107,7 @@ class HomeViewController: UIViewController {
         // 优化输入处理
         webView.allowsBackForwardNavigationGestures = true
         webView.configuration.userContentController.add(self, name: "inputHandler")
+        webView.configuration.userContentController.add(self, name: "errorHandler")
         
         return webView
     }()
@@ -45,6 +124,7 @@ class HomeViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupNavigationBar()
+        setupNetworkMonitoring()
         loadHomePage()
     }
     
@@ -339,6 +419,77 @@ class HomeViewController: UIViewController {
         
         present(alert, animated: true)
     }
+    
+    // 添加网络监控
+    private func setupNetworkMonitoring() {
+        monitor.pathUpdateHandler = { [weak self] path in
+            guard let self = self else { return }
+            self.isNetworkAvailable = path.status == .satisfied
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if self.isNetworkAvailable {
+                    self.logger.info("📶 网络连接恢复")
+                    if !self.webView.isLoading {
+                        self.retryLoadingIfNeeded()
+                    }
+                } else {
+                    self.logger.error("❌ 网络连接断开")
+                    self.showNetworkError()
+                }
+            }
+        }
+        monitor.start(queue: DispatchQueue.global())
+    }
+
+    private func retryLoadingIfNeeded() {
+        guard self.retryCount < self.maxRetryCount else {
+            self.logger.error("❌ 重试次数已达上限")
+            self.showError("重试次数已达上限，请检查网络连接后重试")
+            return
+        }
+        
+        self.retryCount += 1
+        self.logger.info("🔄 第\(self.retryCount)次重试加载")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + self.retryInterval) { [weak self] in
+            guard let self = self else { return }
+            self.retryCount = 0  // 重置重试计数
+            self.loadHomePage()
+        }
+    }
+
+    private func showNetworkError() {
+        let alert = UIAlertController(
+            title: "网络错误",
+            message: "网络连接已断开，请检查网络设置",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(
+            title: "设置",
+            style: .default,
+            handler: { _ in
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        ))
+        
+        alert.addAction(UIAlertAction(
+            title: "取消",
+            style: .cancel
+        ))
+        
+        present(alert, animated: true)
+    }
+    
+    // 在视图控制器被释放时清理资源
+    deinit {
+        monitor.cancel()
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "inputHandler")
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "errorHandler")
+        webView.stopLoading()
+    }
 }
 
 // MARK: - WKNavigationDelegate
@@ -347,33 +498,41 @@ extension HomeViewController: WKNavigationDelegate {
         loadingIndicator.stopAnimating()
         logger.info("✅ 页面加载完成")
         
-        // 注入处理输入相关的JavaScript
-        let inputScript = """
-            document.addEventListener('focusin', function(e) {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                    window.webkit.messageHandlers.inputHandler.postMessage({
-                        type: 'focus',
-                        id: e.target.id
-                    });
-                }
-            });
-        """
-        
-        webView.evaluateJavaScript(inputScript) { (result, error) in
-            if let error = error {
-                self.logger.error("❌ 注入输入处理脚本失败: \(error.localizedDescription)")
-            }
-        }
-        
-        // 执行JavaScript获取页面标题
-        webView.evaluateJavaScript("document.title") { (result, error) in
+        // 获取页面标题
+        webView.evaluateJavaScript("document.title") { [weak self] (result, error) in
             if let title = result as? String {
-                self.logger.info("📄 页面标题: \(title)")
-            }
-            if let error = error {
-                self.logger.error("❌ 获取页面标题失败: \(error.localizedDescription)")
+                self?.logger.info("📄 页面标题: \(title)")
+            } else if let error = error {
+                self?.logger.error("❌ 获取页面标题失败: \(error.localizedDescription)")
             }
         }
+    }
+    
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        logger.error("⚠️ WebKit进程终止")
+        loadingIndicator.stopAnimating()
+        
+        // 显示错误提示
+        let alert = UIAlertController(
+            title: "页面加载错误",
+            message: "页面加载失败，是否重新加载？",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(
+            title: "重新加载",
+            style: .default,
+            handler: { [weak self] _ in
+                self?.loadHomePage()
+            }
+        ))
+        
+        alert.addAction(UIAlertAction(
+            title: "取消",
+            style: .cancel
+        ))
+        
+        present(alert, animated: true)
     }
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -399,12 +558,26 @@ extension HomeViewController: WKUIDelegate {
     }
 }
 
-// 添加WKScriptMessageHandler扩展
+// MARK: - WKScriptMessageHandler
 extension HomeViewController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        // 处理来自网页的消息
-        if message.name == "inputHandler" {
-            logger.info("📝 收到网页输入消息: \(message.body)")
+        switch message.name {
+        case "inputHandler":
+            if let body = message.body as? [String: Any] {
+                logger.info("📝 收到网页输入消息: \(body)")
+            }
+        case "errorHandler":
+            if let body = message.body as? [String: Any] {
+                logger.error("❌ 网页错误: \(body)")
+                // 如果是严重错误，可以重新加载页面
+                if let type = body["type"] as? String, type == "console.error" {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.webView.reload()
+                    }
+                }
+            }
+        default:
+            break
         }
     }
 } 
