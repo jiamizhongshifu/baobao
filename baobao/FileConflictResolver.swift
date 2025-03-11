@@ -2,72 +2,34 @@ import Foundation
 import os.log
 
 class FileConflictResolver {
-    private static let logger = Logger(subsystem: "com.baobao.app", category: "conflict-resolver")
+    private static let logger = Logger(subsystem: "com.baobao.app", category: "file-conflict")
     
-    /// 检查并修复项目中的文件冲突
+    /// 检查并解决文件冲突
     static func checkAndResolveConflicts() {
-        logger.info("🔍 开始检查文件冲突")
+        logger.info("检查文件冲突")
         
-        let fileManager = FileManager.default
-        let documentsDirectory = FileHelper.documentsDirectory
+        // 检查文档目录中是否存在baobao_prototype目录
+        let documentsPrototypePath = FileHelper.documentsDirectory.appendingPathComponent("baobao_prototype").path
         
-        // 检查文档目录中的baobao_prototype目录
-        let prototypeURL = documentsDirectory.appendingPathComponent("baobao_prototype")
+        if FileManager.default.fileExists(atPath: documentsPrototypePath) {
+            logger.info("✅ 文档目录中存在baobao_prototype目录")
+            return
+        }
         
-        if fileManager.fileExists(atPath: prototypeURL.path) {
-            logger.info("✅ 找到baobao_prototype目录: \(prototypeURL.path)")
-            
-            // 检查并修复可能冲突的文件
+        // 如果不存在，尝试从Bundle中复制
+        if let bundleURL = FileHelper.bundlePrototypeURL {
             do {
-                let contents = try fileManager.contentsOfDirectory(at: prototypeURL, includingPropertiesForKeys: nil)
-                
-                // 检查顶级目录中的冲突文件
-                for fileURL in contents {
-                    checkAndRenameConflictFile(fileURL)
-                }
-                
-                // 检查子目录中的冲突文件
-                for fileURL in contents {
-                    var isDirectory: ObjCBool = false
-                    if fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) && isDirectory.boolValue {
-                        if let subContents = try? fileManager.contentsOfDirectory(at: fileURL, includingPropertiesForKeys: nil) {
-                            for subFileURL in subContents {
-                                checkAndRenameConflictFile(subFileURL)
-                            }
-                        }
-                    }
-                }
-                
-                logger.info("✅ 文件冲突检查完成")
-                
+                try FileManager.default.copyItem(at: bundleURL, to: FileHelper.documentsDirectory.appendingPathComponent("baobao_prototype"))
+                logger.info("✅ 成功从Bundle复制baobao_prototype目录到文档目录")
             } catch {
-                logger.error("❌ 检查文件冲突失败: \(error.localizedDescription)")
+                logger.error("❌ 复制baobao_prototype目录失败: \(error.localizedDescription)")
+                
+                // 如果复制失败，创建测试资源
+                FileHelper.createTestResources()
             }
         } else {
-            logger.info("⚠️ 未找到baobao_prototype目录")
-        }
-    }
-    
-    /// 检查并重命名冲突文件
-    private static func checkAndRenameConflictFile(_ fileURL: URL) {
-        let fileName = fileURL.lastPathComponent
-        
-        // 检查是否是Swift文件
-        if fileName.hasSuffix(".swift") {
-            // 检查是否是冲突文件
-            let conflictFiles = ["AppDelegate.swift", "SceneDelegate.swift", "ViewController.swift"]
-            
-            if conflictFiles.contains(fileName) {
-                let newFileName = fileName.replacingOccurrences(of: ".swift", with: "Prototype.swift")
-                let newFileURL = fileURL.deletingLastPathComponent().appendingPathComponent(newFileName)
-                
-                do {
-                    try FileManager.default.moveItem(at: fileURL, to: newFileURL)
-                    logger.info("🔄 重命名文件: \(fileName) -> \(newFileName)")
-                } catch {
-                    logger.error("❌ 重命名文件失败: \(error.localizedDescription)")
-                }
-            }
+            logger.warning("⚠️ 未找到baobao_prototype目录，创建测试资源")
+            FileHelper.createTestResources()
         }
     }
 } 

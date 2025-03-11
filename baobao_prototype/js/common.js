@@ -64,35 +64,33 @@ function hideLoading() {
     }
 }
 
-// 显示Toast消息
+/**
+ * 显示Toast通知
+ * @param {string} message - 要显示的消息
+ * @param {number} duration - 显示时长（毫秒）
+ */
 function showToast(message, duration = 2000) {
-    Logger.debug(`显示Toast消息: "${message}"`);
-    
+    // 获取或创建toast元素
     let toast = document.getElementById('toast');
-    
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'toast';
-        toast.style.cssText = 'position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background-color: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; z-index: 9999; font-size: 16px; transition: opacity 0.3s; opacity: 0;';
+        toast.className = 'toast';
         document.body.appendChild(toast);
     }
     
-    // 清除之前的定时器
-    if (toast.timeoutId) {
-        clearTimeout(toast.timeoutId);
-    }
-    
-    // 设置消息内容
+    // 设置消息
     toast.textContent = message;
     
-    // 显示Toast
+    // 显示toast
     setTimeout(() => {
-        toast.style.opacity = '1';
+        toast.classList.add('show');
     }, 10);
     
-    // 设置定时器隐藏Toast
-    toast.timeoutId = setTimeout(() => {
-        toast.style.opacity = '0';
+    // 设置定时器，隐藏toast
+    clearTimeout(toast.hideTimeout);
+    toast.hideTimeout = setTimeout(() => {
+        toast.classList.remove('show');
     }, duration);
 }
 
@@ -670,4 +668,41 @@ document.addEventListener('DOMContentLoaded', function() {
 window.Logger = Logger;
 window.showToast = showToast;
 window.PerformanceMonitor = PerformanceMonitor;
-window.DeviceDetector = DeviceDetector; 
+window.DeviceDetector = DeviceDetector;
+
+/**
+ * 记录日志
+ * @param {string} message - 日志消息
+ * @param {string} level - 日志级别（info, warn, error, debug）
+ */
+function log(message, level = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+    
+    // 控制台输出
+    switch (level) {
+        case 'error':
+            console.error(`${prefix} ${message}`);
+            break;
+        case 'warn':
+            console.warn(`${prefix} ${message}`);
+            break;
+        case 'debug':
+            console.debug(`${prefix} ${message}`);
+            break;
+        default:
+            console.log(`${prefix} ${message}`);
+    }
+    
+    // 如果在iOS环境中，发送日志到原生代码
+    try {
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.log) {
+            window.webkit.messageHandlers.log.postMessage({
+                level: level,
+                message: message
+            });
+        }
+    } catch (e) {
+        console.warn(`无法发送日志到原生代码: ${e.message}`);
+    }
+} 

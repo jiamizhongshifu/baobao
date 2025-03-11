@@ -1,0 +1,184 @@
+/* 故事卡片样式 - 优化版 */
+:root {
+  --primary-color: #007AFF;
+  --secondary-color: #5AC8FA;
+  --accent-color: #FF9500;
+  --background-color: #F2F2F7;
+  --card-background: #FFFFFF;
+  --text-primary: #000000;
+  --text-secondary: #8E8E93;
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --border-radius: 16px;
+  --spacing-small: 8px;
+  --spacing-medium: 16px;
+  --spacing-large: 24px;
+}
+
+/* 故事卡片容器 */
+.story-cards {
+  width: 100%;
+  margin-bottom: var(--spacing-large);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-medium);
+}
+
+/* 故事卡片 */
+.story-card {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-light);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.story-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-medium);
+}
+
+/* 故事卡片封面 */
+.story-cover {
+  position: relative;
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  padding: var(--spacing-medium);
+}
+
+.story-cover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
+  z-index: 1;
+}
+
+.story-cover-title {
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* 故事卡片内容 */
+.story-info {
+  padding: var(--spacing-medium);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.story-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.story-theme {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.story-date {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.story-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+}
+
+.story-play-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-size: 18px;
+  box-shadow: var(--shadow-light);
+  transition: all 0.2s ease;
+}
+
+.story-play-button:active {
+  transform: scale(0.95);
+  background-color: #0062CC;
+}
+
+/* 故事卡片徽章 */
+.story-badge {
+  position: absolute;
+  top: var(--spacing-medium);
+  right: var(--spacing-medium);
+  background-color: var(--accent-color);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  z-index: 3;
+}
+
+/* 无故事状态 */
+.no-stories {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-large);
+  text-align: center;
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  margin: var(--spacing-large) 0;
+}
+
+.no-stories-icon {
+  font-size: 48px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-medium);
+}
+
+.no-stories-text {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-medium);
+}
+
+.create-story-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: var(--shadow-light);
+  transition: all 0.2s ease;
+}
+
+.create-story-button:active {
+  transform: scale(0.98);
+  background-color: #0062CC;
+} 

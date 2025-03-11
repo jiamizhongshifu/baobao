@@ -356,6 +356,7 @@
     </div>
     
     <script src="../js/common.js"></script>
+    <script src="../js/api.js"></script>
     <script>
         // 获取URL中的主题参数
         const urlParams = new URLSearchParams(window.location.search);
@@ -417,18 +418,55 @@
         });
         
         // 生成故事按钮
-        document.getElementById('generateButton').addEventListener('click', () => {
+        document.getElementById('generateButton').addEventListener('click', async () => {
             const selectedLength = document.querySelector('#lengthOptions .option-card.selected').getAttribute('data-length');
             const selectedVoice = document.querySelector('#voiceOptions .option-card.selected').getAttribute('data-voice');
             
             // 显示加载动画
             document.getElementById('loadingContainer').style.display = 'flex';
             
-            // 模拟生成过程，3秒后返回首页
-            setTimeout(() => {
-                // 生成完成后直接返回首页
+            try {
+                // 获取宝宝信息（这里假设已经有宝宝信息）
+                const childrenResult = await api.getChildren();
+                
+                if (!childrenResult.children || childrenResult.children.length === 0) {
+                    // 如果没有宝宝信息，跳转到宝宝档案页面
+                    window.location.href = 'profile.html?redirect=story_themes.html';
+                    return;
+                }
+                
+                // 使用第一个宝宝信息
+                const child = childrenResult.children[0];
+                
+                // 生成故事
+                const story = await api.generateStory(
+                    theme,
+                    child.name,
+                    child.age,
+                    child.interests,
+                    selectedLength
+                );
+                
+                // 合成语音
+                const speechResult = await api.synthesizeSpeech(story.content, selectedVoice);
+                
+                // 添加音频URL到故事对象
+                story.audioURL = speechResult.audioURL;
+                
+                // 保存故事
+                await api.saveStory(story);
+                
+                // 生成完成后跳转到首页
                 window.location.href = 'home.html';
-            }, 3000);
+            } catch (error) {
+                console.error('生成故事失败:', error);
+                
+                // 隐藏加载动画
+                document.getElementById('loadingContainer').style.display = 'none';
+                
+                // 显示错误提示
+                showToast(`生成故事失败: ${error.message}`);
+            }
         });
     </script>
 </body>

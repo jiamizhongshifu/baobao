@@ -31,390 +31,578 @@ class FileHelper {
             return potentialURL
         }
         
-        // 尝试在Bundle的上级目录中查找
-        let parentURL = bundleURL.deletingLastPathComponent()
-        let potentialParentURL = parentURL.appendingPathComponent("baobao_prototype")
+        // 尝试在项目根目录中查找
+        let projectURL = bundleURL.deletingLastPathComponent()
+        let projectPotentialURL = projectURL.appendingPathComponent("baobao_prototype")
         
-        if FileManager.default.fileExists(atPath: potentialParentURL.path) {
-            logger.info("✅ 在Bundle的上级目录中找到baobao_prototype目录: \(potentialParentURL.path)")
-            return potentialParentURL
-        }
-        
-        // 列出Bundle中的所有资源
-        if let resourcePaths = Bundle.main.paths(forResourcesOfType: nil, inDirectory: nil) as [String]? {
-            logger.info("📂 Bundle中的资源列表 (\(resourcePaths.count) 个):")
-            for path in resourcePaths.prefix(20) {
-                logger.info("- \(path)")
-            }
-            if resourcePaths.count > 20 {
-                logger.info("... 还有 \(resourcePaths.count - 20) 个资源未显示")
-            }
-        }
-        
-        // 尝试查找包含 "baobao_prototype" 的资源
-        if let resourcePaths = Bundle.main.paths(forResourcesOfType: nil, inDirectory: nil) as [String]? {
-            for path in resourcePaths {
-                if path.contains("baobao_prototype") {
-                    logger.info("✅ 找到包含 baobao_prototype 的资源: \(path)")
-                    return URL(fileURLWithPath: path)
-                }
-            }
+        if FileManager.default.fileExists(atPath: projectPotentialURL.path) {
+            logger.info("✅ 在项目根目录中找到baobao_prototype目录: \(projectPotentialURL.path)")
+            return projectPotentialURL
         }
         
         return nil
     }
     
-    /// 获取文档目录中baobao_prototype目录的URL
-    static var documentsPrototypeURL: URL {
-        documentsDirectory.appendingPathComponent("baobao_prototype")
-    }
-    
-    /// 复制baobao_prototype目录到文档目录
-    static func copyBaoBaoPrototypeToDocuments() {
-        // 检查Bundle中是否存在baobao_prototype目录
-        if let bundleURL = bundlePrototypeURL {
-            let fileManager = FileManager.default
-            let destinationURL = documentsPrototypeURL
-            
-            do {
-                // 如果目标目录已存在，先删除
-                if fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.removeItem(at: destinationURL)
-                    logger.info("🗑️ 已删除旧的baobao_prototype目录")
-                }
-                
-                // 复制目录
-                try fileManager.copyItem(at: bundleURL, to: destinationURL)
-                logger.info("✅ 成功复制baobao_prototype目录到文档目录")
-                
-                // 列出复制的文件
-                logDirectoryContents(at: destinationURL)
-                
-            } catch {
-                logger.error("❌ 复制baobao_prototype目录失败: \(error.localizedDescription)")
-                // 如果复制失败，创建测试资源
-                createTestResources()
-            }
-        } else {
-            logger.error("❌ 无法在Bundle中找到baobao_prototype目录")
-            // 如果目录不存在，创建测试资源
-            createTestResources()
-        }
-    }
-    
     /// 创建测试资源
     static func createTestResources() {
-        logger.info("🔨 开始创建测试资源")
-        let fileManager = FileManager.default
+        logger.info("创建测试资源")
         
-        // 创建baobao_prototype目录结构
-        let prototypeURL = documentsPrototypeURL
-        let pagesURL = prototypeURL.appendingPathComponent("pages")
-        let cssURL = prototypeURL.appendingPathComponent("css")
-        let jsURL = prototypeURL.appendingPathComponent("js")
-        let imgURL = prototypeURL.appendingPathComponent("img")
+        // 创建baobao_prototype目录
+        let prototypeDir = documentsDirectory.appendingPathComponent("baobao_prototype")
         
         do {
-            // 创建目录结构
-            try fileManager.createDirectory(at: prototypeURL, withIntermediateDirectories: true)
-            try fileManager.createDirectory(at: pagesURL, withIntermediateDirectories: true)
-            try fileManager.createDirectory(at: cssURL, withIntermediateDirectories: true)
-            try fileManager.createDirectory(at: jsURL, withIntermediateDirectories: true)
-            try fileManager.createDirectory(at: imgURL, withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: prototypeDir.path) {
+                try FileManager.default.createDirectory(at: prototypeDir, withIntermediateDirectories: true)
+                logger.info("✅ 创建baobao_prototype目录成功")
+            }
             
-            // 创建首页
-            createHomePage(at: pagesURL.appendingPathComponent("home.html"))
+            // 创建子目录
+            let directories = ["css", "js", "images", "pages"]
             
-            // 创建CSS文件
-            createStyleSheet(at: cssURL.appendingPathComponent("style.css"))
+            for dir in directories {
+                let dirPath = prototypeDir.appendingPathComponent(dir)
+                if !FileManager.default.fileExists(atPath: dirPath.path) {
+                    try FileManager.default.createDirectory(at: dirPath, withIntermediateDirectories: true)
+                    logger.info("✅ 创建\(dir)目录成功")
+                }
+            }
             
-            // 创建JS文件
-            createJavaScript(at: jsURL.appendingPathComponent("main.js"))
+            // 创建测试HTML文件
+            createTestHTMLFile(at: prototypeDir.appendingPathComponent("pages/home.html"))
             
-            logger.info("✅ 测试资源创建成功")
+            // 创建测试CSS文件
+            createTestCSSFile(at: prototypeDir.appendingPathComponent("css/common.css"))
+            
+            // 创建测试JS文件
+            createTestJSFile(at: prototypeDir.appendingPathComponent("js/common.js"))
+            createTestAPIJSFile(at: prototypeDir.appendingPathComponent("js/api.js"))
+            
+            logger.info("✅ 测试资源创建完成")
         } catch {
             logger.error("❌ 创建测试资源失败: \(error.localizedDescription)")
         }
     }
     
     /// 创建测试HTML文件
-    static func createTestHtmlInDocuments() -> URL {
-        let testHtmlURL = documentsDirectory.appendingPathComponent("test.html")
+    private static func createTestHTMLFile(at url: URL) {
         let htmlContent = """
         <!DOCTYPE html>
-        <html>
+        <html lang="zh-CN">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>测试页面</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <title>宝宝故事</title>
+            <link rel="stylesheet" href="../css/common.css">
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                     margin: 0;
                     padding: 20px;
-                    background-color: #f5f5f7;
-                    color: #1d1d1f;
+                    background-color: #F2E9DE;
+                    color: #333;
                 }
-                .container {
-                    max-width: 600px;
-                    margin: 0 auto;
-                    background-color: white;
-                    padding: 30px;
-                    border-radius: 12px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
+                
                 h1 {
-                    color: #1d1d1f;
                     font-size: 24px;
-                    margin-bottom: 16px;
+                    text-align: center;
+                    margin-bottom: 30px;
                 }
-                p {
-                    color: #424245;
-                    line-height: 1.5;
-                    margin-bottom: 12px;
+                
+                .card {
+                    background-color: white;
+                    border-radius: 15px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
                 }
-                .success {
-                    color: #00b300;
-                    font-weight: 500;
-                }
-                .time {
-                    color: #86868b;
-                    font-size: 14px;
+                
+                .button {
+                    display: block;
+                    background-color: #000;
+                    color: white;
+                    text-align: center;
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    text-decoration: none;
                 }
             </style>
         </head>
         <body>
-            <div class="container">
-                <h1>WebView 测试页面</h1>
-                <p class="success">✅ WebView 配置成功！</p>
-                <p>页面加载时间：<span class="time" id="loadTime"></span></p>
-                <script>
-                    document.getElementById('loadTime').textContent = new Date().toLocaleString();
-                </script>
-            </div>
-        </body>
-        </html>
-        """
-        
-        do {
-            try htmlContent.write(to: testHtmlURL, atomically: true, encoding: .utf8)
-            logger.info("✅ 成功创建测试HTML文件")
-            return testHtmlURL
-        } catch {
-            logger.error("❌ 创建测试HTML文件失败: \(error.localizedDescription)")
-            return testHtmlURL
-        }
-    }
-    
-    /// 创建首页
-    private static func createHomePage(at url: URL) {
-        let htmlContent = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>宝宝故事</title>
-            <link rel="stylesheet" href="../css/style.css">
-        </head>
-        <body>
-            <div class="container">
-                <header>
-                    <h1>宝宝故事</h1>
-                    <p>为您的宝宝创建个性化的故事</p>
-                </header>
-                
-                <section class="story-cards">
-                    <h2>最近的故事</h2>
-                    <div class="card-container">
-                        <div class="card">
-                            <div class="card-title">太空冒险</div>
-                            <div class="card-content">小明踏上了一段奇妙的太空之旅...</div>
-                            <button class="play-button">播放</button>
-                        </div>
-                        
-                        <div class="card">
-                            <div class="card-title">海底世界</div>
-                            <div class="card-content">小红探索神秘的海底王国...</div>
-                            <button class="play-button">播放</button>
-                        </div>
-                    </div>
-                    
-                    <button class="create-button">创建新故事</button>
-                </section>
+            <h1>宝宝故事</h1>
+            
+            <div class="card">
+                <h2>测试页面</h2>
+                <p>这是一个测试页面，用于验证WebView加载是否正常。</p>
+                <p>如果你看到这个页面，说明WebView已经成功加载，但未能找到正确的资源文件。</p>
+                <p>请检查baobao_prototype目录是否正确配置。</p>
             </div>
             
-            <script src="../js/main.js"></script>
+            <a href="#" class="button" id="testApiBtn">测试API</a>
+            
+            <script src="../js/common.js"></script>
+            <script src="../js/api.js"></script>
+            <script>
+                document.getElementById('testApiBtn').addEventListener('click', function() {
+                    // 测试API调用
+                    if (typeof api !== 'undefined') {
+                        api.getStories().then(function(result) {
+                            alert('API调用成功: ' + JSON.stringify(result));
+                        }).catch(function(error) {
+                            alert('API调用失败: ' + error.message);
+                        });
+                    } else {
+                        alert('API对象未定义，请检查api.js是否正确加载');
+                    }
+                });
+                
+                // 通知原生代码页面已加载
+                try {
+                    window.webkit.messageHandlers.pageLoaded.postMessage({
+                        page: 'test',
+                        status: 'success'
+                    });
+                } catch (e) {
+                    console.log('无法通知原生代码页面已加载');
+                }
+            </script>
         </body>
         </html>
         """
         
         do {
             try htmlContent.write(to: url, atomically: true, encoding: .utf8)
-            logger.info("✅ 成功创建首页")
+            logger.info("✅ 创建测试HTML文件成功: \(url.path)")
         } catch {
-            logger.error("❌ 创建首页失败: \(error.localizedDescription)")
+            logger.error("❌ 创建测试HTML文件失败: \(error.localizedDescription)")
         }
     }
     
-    /// 创建样式表
-    private static func createStyleSheet(at url: URL) {
+    /// 创建测试CSS文件
+    private static func createTestCSSFile(at url: URL) {
         let cssContent = """
+        /* 基本样式 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f7;
-            color: #1d1d1f;
+            background-color: #F2E9DE;
+            color: #333;
         }
         
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+        /* 标题样式 */
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 0;
+            font-weight: 700;
         }
         
-        header {
+        /* 链接样式 */
+        a {
+            color: #0066CC;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 按钮样式 */
+        .button {
+            display: inline-block;
+            background-color: #000;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
             text-align: center;
-            margin-bottom: 30px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
         }
         
-        h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
+        .button:hover {
+            background-color: #333;
         }
         
-        h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .story-cards {
-            background-color: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .card-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
+        /* 卡片样式 */
         .card {
-            flex: 1;
-            min-width: 200px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 15px;
-            background-color: #f9f9f9;
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         
-        .card-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 10px;
+        /* 加载动画 */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
         
-        .card-content {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
         
-        .play-button {
-            background-color: #007aff;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Toast通知 */
+        .toast {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
             color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-        
-        .create-button {
-            display: block;
-            width: 100%;
-            background-color: #34c759;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px;
+            padding: 12px 20px;
+            border-radius: 20px;
             font-size: 16px;
-            cursor: pointer;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .toast.show {
+            opacity: 1;
         }
         """
         
         do {
             try cssContent.write(to: url, atomically: true, encoding: .utf8)
-            logger.info("✅ 成功创建样式表")
+            logger.info("✅ 创建测试CSS文件成功: \(url.path)")
         } catch {
-            logger.error("❌ 创建样式表失败: \(error.localizedDescription)")
+            logger.error("❌ 创建测试CSS文件失败: \(error.localizedDescription)")
         }
     }
     
-    /// 创建JavaScript文件
-    private static func createJavaScript(at url: URL) {
+    /// 创建测试JS文件
+    private static func createTestJSFile(at url: URL) {
         let jsContent = """
+        // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
-            // 播放按钮点击事件
-            const playButtons = document.querySelectorAll('.play-button');
-            playButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const card = this.closest('.card');
-                    const title = card.querySelector('.card-title').textContent;
-                    alert('正在播放: ' + title);
-                });
-            });
+            console.log('页面加载完成');
+        });
+        
+        // 显示加载动画
+        function showLoading() {
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.id = 'loading';
             
-            // 创建新故事按钮点击事件
-            const createButton = document.querySelector('.create-button');
-            if (createButton) {
-                createButton.addEventListener('click', function() {
-                    alert('即将创建新故事...');
-                });
+            const spinner = document.createElement('div');
+            spinner.className = 'loading-spinner';
+            
+            loading.appendChild(spinner);
+            document.body.appendChild(loading);
+        }
+        
+        // 隐藏加载动画
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+        
+        // 显示Toast通知
+        function showToast(message, duration = 2000) {
+            // 获取或创建toast元素
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.className = 'toast';
+                document.body.appendChild(toast);
             }
             
-            console.log('页面初始化完成');
-        });
+            // 设置消息
+            toast.textContent = message;
+            
+            // 显示toast
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // 设置定时器，隐藏toast
+            clearTimeout(toast.hideTimeout);
+            toast.hideTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+        
+        // 处理来自原生代码的响应
+        window.handleNativeResponse = function(callbackID, response) {
+            console.log('收到原生响应:', callbackID, response);
+            
+            // 查找并执行回调
+            if (window.api && window.api.callbacks && window.api.callbacks[callbackID]) {
+                const callback = window.api.callbacks[callbackID];
+                
+                if (response.success) {
+                    callback.resolve(response.data);
+                } else {
+                    callback.reject(new Error(response.error || '未知错误'));
+                }
+                
+                // 删除回调
+                delete window.api.callbacks[callbackID];
+            } else {
+                console.error('未找到回调:', callbackID);
+            }
+        };
         """
         
         do {
             try jsContent.write(to: url, atomically: true, encoding: .utf8)
-            logger.info("✅ 成功创建JavaScript文件")
+            logger.info("✅ 创建测试JS文件成功: \(url.path)")
         } catch {
-            logger.error("❌ 创建JavaScript文件失败: \(error.localizedDescription)")
+            logger.error("❌ 创建测试JS文件失败: \(error.localizedDescription)")
         }
     }
     
-    /// 列出指定目录的内容
-    private static func logDirectoryContents(at url: URL) {
-        do {
-            let contents = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
-            logger.info("📄 目录内容 (\(url.lastPathComponent)):")
-            contents.forEach { fileURL in
-                logger.info("- \(fileURL.lastPathComponent)")
+    /// 创建测试API JS文件
+    private static func createTestAPIJSFile(at url: URL) {
+        let jsContent = """
+        // API客户端
+        class BaoBaoAPI {
+            constructor() {
+                // 回调存储
+                this.callbacks = {};
+                this.callbackIdCounter = 0;
+                
+                // 重试配置
+                this.maxRetries = 3;
+                this.retryDelay = 1000; // 毫秒
+                
+                // 网络状态
+                this.isOnline = true;
+                this.offlineQueue = [];
+                
+                // 检测是否在iOS环境中
+                this.isInIOS = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.api;
+                
+                // 监听网络状态变化
+                this.setupNetworkMonitoring();
             }
-        } catch {
-            logger.error("❌ 无法列出目录内容: \(error.localizedDescription)")
+            
+            // 设置网络监控
+            setupNetworkMonitoring() {
+                window.addEventListener('online', () => {
+                    console.log('网络已连接');
+                    this.isOnline = true;
+                    this.processOfflineQueue();
+                });
+                
+                window.addEventListener('offline', () => {
+                    console.log('网络已断开');
+                    this.isOnline = false;
+                });
+            }
+            
+            // 处理离线队列
+            processOfflineQueue() {
+                if (this.offlineQueue.length === 0) return;
+                
+                console.log(`处理离线队列，共${this.offlineQueue.length}个请求`);
+                
+                const queue = [...this.offlineQueue];
+                this.offlineQueue = [];
+                
+                queue.forEach(item => {
+                    this.sendMessage(item.action, item.params)
+                        .then(item.callback.resolve)
+                        .catch(item.callback.reject);
+                });
+            }
+            
+            // 判断操作是否需要网络
+            requiresNetwork(action) {
+                // 某些操作可能不需要网络
+                const offlineActions = ['getLocalStories', 'getLocalSettings'];
+                return !offlineActions.includes(action);
+            }
+            
+            // 发送消息到原生API
+            sendMessage(name, params = {}) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        // 生成回调ID
+                        const callbackID = `callback_${Date.now()}_${this.callbackIdCounter++}`;
+                        
+                        // 保存回调函数
+                        this.callbacks[callbackID] = { resolve, reject };
+                        
+                        // 构建消息
+                        const message = {
+                            callbackID,
+                            params
+                        };
+                        
+                        // 检查网络状态
+                        if (!this.isOnline && this.requiresNetwork(name)) {
+                            console.warn(`网络离线，将请求加入队列: ${name}`);
+                            this.offlineQueue.push({
+                                action: name,
+                                params,
+                                callback: { resolve, reject }
+                            });
+                            
+                            // 显示离线提示
+                            if (typeof showToast === 'function') {
+                                showToast('当前处于离线状态，请求将在网络恢复后执行');
+                            }
+                            
+                            return;
+                        }
+                        
+                        // 如果在iOS环境中，发送消息到原生API
+                        if (this.isInIOS) {
+                            console.log(`发送API请求: ${name}`);
+                            window.webkit.messageHandlers.api.postMessage(message);
+                        } else {
+                            // 否则，模拟响应（用于开发环境）
+                            console.log(`模拟发送消息: ${name}`, message);
+                            this.mockResponse(name, message);
+                        }
+                    } catch (e) {
+                        console.error(`发送消息时出错: ${e.message}`);
+                        reject(e);
+                    }
+                });
+            }
+            
+            // 模拟响应（用于开发环境）
+            mockResponse(name, message) {
+                setTimeout(() => {
+                    let response = {
+                        success: true,
+                        data: null
+                    };
+                    
+                    try {
+                        // 根据不同的API调用生成不同的模拟响应
+                        switch (name) {
+                            case 'getStories':
+                                response.data = {
+                                    stories: this.mockGetStories(message.params)
+                                };
+                                break;
+                            default:
+                                response.data = {
+                                    message: `模拟响应: ${name} 调用成功`
+                                };
+                        }
+                        
+                        // 调用回调
+                        window.handleNativeResponse(message.callbackID, response);
+                    } catch (e) {
+                        console.error(`生成模拟响应时出错: ${e.message}`);
+                        window.handleNativeResponse(message.callbackID, {
+                            success: false,
+                            error: e.message
+                        });
+                    }
+                }, 500); // 模拟网络延迟
+            }
+            
+            // 模拟获取故事列表
+            mockGetStories(params) {
+                const { childName } = params || {};
+                
+                // 生成模拟故事列表
+                const stories = [];
+                const themes = ['魔法世界', '动物朋友', '太空冒险', '公主王子', '海底世界', '恐龙时代'];
+                
+                for (let i = 0; i < 5; i++) {
+                    const theme = themes[Math.floor(Math.random() * themes.length)];
+                    const name = childName || '小明';
+                    
+                    stories.push({
+                        id: `story_${i}`,
+                        title: `${name}的${theme}冒险`,
+                        content: `这是一个关于${name}的${theme}冒险故事...`,
+                        theme,
+                        childName: name,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                
+                return stories;
+            }
+            
+            // API方法
+            
+            // 获取故事列表
+            getStories(childName) {
+                return this.sendMessage('getStories', { childName });
+            }
+            
+            // 获取故事详情
+            getStoryDetail(storyId) {
+                return this.sendMessage('getStoryDetail', { storyId });
+            }
+            
+            // 创建故事
+            createStory(childName, theme) {
+                return this.sendMessage('createStory', { childName, theme });
+            }
         }
-    }
-    
-    static func getDocumentsDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0]
-    }
-    
-    static func listFilesInDirectory(directoryPath: String) -> [String] {
-        let fileManager = FileManager.default
+        
+        // 创建API实例
+        window.api = new BaoBaoAPI();
+        """
         
         do {
-            let fileURLs = try fileManager.contentsOfDirectory(atPath: directoryPath)
-            return fileURLs
+            try jsContent.write(to: url, atomically: true, encoding: .utf8)
+            logger.info("✅ 创建测试API JS文件成功: \(url.path)")
         } catch {
-            print("列出目录内容失败: \(error.localizedDescription)")
-            return []
+            logger.error("❌ 创建测试API JS文件失败: \(error.localizedDescription)")
+        }
+    }
+    
+    /// 检查并解决文件冲突
+    static func checkAndResolveConflicts() {
+        logger.info("检查文件冲突")
+        
+        // 检查文档目录中是否存在baobao_prototype目录
+        let documentsPrototypePath = documentsDirectory.appendingPathComponent("baobao_prototype").path
+        
+        if FileManager.default.fileExists(atPath: documentsPrototypePath) {
+            logger.info("✅ 文档目录中存在baobao_prototype目录")
+            return
+        }
+        
+        // 如果不存在，尝试从Bundle中复制
+        if let bundleURL = bundlePrototypeURL {
+            do {
+                try FileManager.default.copyItem(at: bundleURL, to: documentsDirectory.appendingPathComponent("baobao_prototype"))
+                logger.info("✅ 成功从Bundle复制baobao_prototype目录到文档目录")
+            } catch {
+                logger.error("❌ 复制baobao_prototype目录失败: \(error.localizedDescription)")
+                
+                // 如果复制失败，创建测试资源
+                createTestResources()
+            }
+        } else {
+            logger.warning("⚠️ 未找到baobao_prototype目录，创建测试资源")
+            createTestResources()
         }
     }
 } 

@@ -4,9 +4,193 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>宝宝故事</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @font-face {
+            font-family: 'Font Awesome 6 Free';
+            font-style: normal;
+            font-weight: 900;
+            font-display: block;
+            src: url("../css/webfonts/fa-solid-900.woff2") format("woff2");
+        }
+        
+        @font-face {
+            font-family: 'Font Awesome 6 Free';
+            font-style: normal;
+            font-weight: 400;
+            font-display: block;
+            src: url("../css/webfonts/fa-regular-400.woff2") format("woff2");
+        }
+        
+        @font-face {
+            font-family: 'Font Awesome 6 Brands';
+            font-style: normal;
+            font-weight: 400;
+            font-display: block;
+            src: url("../css/webfonts/fa-brands-400.woff2") format("woff2");
+        }
+        
+        .fas {
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+        }
+        
+        .far {
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 400;
+        }
+        
+        .fab {
+            font-family: 'Font Awesome 6 Brands';
+            font-weight: 400;
+        }
+    </style>
+    <script>
+        // 初始化日志系统
+        function log(message, level = 'info') {
+            const timestamp = new Date().toISOString();
+            const prefix = `[${timestamp}][HOME]`;
+            switch(level) {
+                case 'error':
+                    console.error(`${prefix}[ERROR] ${message}`);
+                    break;
+                case 'warn':
+                    console.warn(`${prefix}[WARN] ${message}`);
+                    break;
+                case 'debug':
+                    console.debug(`${prefix}[DEBUG] ${message}`);
+                    break;
+                default:
+                    console.log(`${prefix}[INFO] ${message}`);
+            }
+        }
+
+        // 增强的错误处理
+        window.onerror = function(message, source, lineno, colno, error) {
+            try {
+                const errorInfo = {
+                    message: message,
+                    source: source,
+                    line: lineno,
+                    column: colno,
+                    stack: error ? error.stack : null,
+                    userAgent: navigator.userAgent,
+                    timestamp: new Date().toISOString()
+                };
+                
+                log(`页面错误: ${message}`, 'error');
+                
+                // 向原生应用报告错误
+                if (window.webkit && window.webkit.messageHandlers.logError) {
+                    window.webkit.messageHandlers.logError.postMessage(errorInfo);
+                }
+                
+                // 如果是资源加载错误，尝试本地加载
+                if (message.includes('loading resource') || message.includes('Load failed')) {
+                    handleResourceLoadError(source);
+                }
+            } catch (e) {
+                console.error('错误处理器异常:', e);
+            }
+            return true; // 防止错误冒泡
+        };
+        
+        // 处理资源加载错误
+        function handleResourceLoadError(source) {
+            try {
+                if (source.includes('tailwindcss')) {
+                    log('TailwindCSS 加载失败，尝试使用本地版本', 'warn');
+                    loadLocalStylesheet('../css/vendor/tailwind.min.css');
+                } else if (source.includes('font-awesome')) {
+                    log('Font Awesome 加载失败，尝试使用本地版本', 'warn');
+                    loadLocalStylesheet('../css/vendor/all.min.css');
+                }
+            } catch (e) {
+                log(`处理资源加载错误失败: ${e.message}`, 'error');
+            }
+        }
+        
+        // 加载本地样式表
+        function loadLocalStylesheet(path) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = path;
+            document.head.appendChild(link);
+        }
+
+        // 处理未捕获的Promise错误
+        window.addEventListener('unhandledrejection', function(event) {
+            try {
+                const reason = event.reason;
+                log(`未处理的Promise错误: ${reason}`, 'error');
+                
+                if (window.webkit && window.webkit.messageHandlers.logError) {
+                    window.webkit.messageHandlers.logError.postMessage({
+                        type: 'unhandledrejection',
+                        reason: String(reason),
+                        stack: reason.stack,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                event.preventDefault(); // 防止错误冒泡
+            } catch (e) {
+                console.error('Promise错误处理器异常:', e);
+            }
+        });
+
+        // 确保文档加载完成后再执行初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                log('DOM加载完成，开始初始化');
+                initApp();
+            } catch (e) {
+                log(`初始化失败: ${e.message}`, 'error');
+            }
+        });
+
+        // 应用初始化
+        function initApp() {
+            // 预加载关键资源
+            preloadResources();
+            
+            // 初始化UI组件
+            initCreateStoryButton();
+            initPlayerControls();
+            
+            // 检查并替换可能的损坏图标
+            replaceCatIcons();
+            
+            log('应用初始化完成');
+        }
+
+        // 预加载关键资源
+        function preloadResources() {
+            try {
+                const resources = [
+                    '../css/common.css',
+                    '../css/story_card.css'
+                ];
+                
+                resources.forEach(resource => {
+                    const link = document.createElement('link');
+                    link.rel = 'preload';
+                    link.as = resource.endsWith('.css') ? 'style' : 'script';
+                    link.href = resource;
+                    document.head.appendChild(link);
+                });
+                
+                log('关键资源预加载完成');
+            } catch (e) {
+                log(`资源预加载失败: ${e.message}`, 'error');
+            }
+        }
+    </script>
+    
+    <!-- 本地优先加载样式 -->
+    <link rel="stylesheet" href="../css/vendor/tailwind.min.css">
+    <link rel="stylesheet" href="../css/vendor/all.min.css">
     <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/story_card.css">
     <style>
         body {
             background-color: #F2E9DE;
@@ -345,7 +529,7 @@
             margin-bottom: 10px;
         }
         
-        .progress {
+        .progress-fill {
             height: 100%;
             background-color: #FFD966;
             border-radius: 3px;
@@ -553,7 +737,7 @@
             
             <div class="progress-container">
                 <div class="progress-bar">
-                    <div class="progress" id="progressBar"></div>
+                    <div class="progress-fill" id="progressBar"></div>
                 </div>
                 <div class="time-info">
                     <span id="currentTime">00:00</span>
@@ -562,72 +746,51 @@
             </div>
         </div>
         
-        <a href="story_themes.html" class="new-story-btn bounce-in">
-            <i class="fas fa-magic"></i>
-            创建新故事
-        </a>
-        
-        <div class="section-title fade-in">
-            <i class="fas fa-history"></i> 最近故事
+        <!-- 故事卡片部分 -->
+        <div class="section-title">
+            <i class="fas fa-book"></i>
+            <span>我的故事</span>
         </div>
-        
-        <div class="story-cards">
-            <div class="story-card fade-in" style="animation-delay: 0.1s;">
-                <div class="cassette-container" style="background-image: url('https://images.unsplash.com/photo-1454789548928-9efd52dc4031?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80');">
-                    <div class="cassette">
-                        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="10" y="10" width="180" height="100" rx="10" fill="rgba(255,255,255,0.2)"/>
-                            <circle cx="60" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
-                            <circle cx="140" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
-                            <rect x="50" y="50" width="100" height="20" fill="rgba(255,255,255,0.3)"/>
-                        </svg>
-                    </div>
-                    <div class="cassette-label">太空冒险</div>
+
+        <div class="story-cards" id="storyCards">
+            <!-- 故事卡片将通过JavaScript动态生成 -->
+            <!-- 示例卡片结构 -->
+            <div class="story-card" data-id="story-1">
+                <div class="story-cover" style="background-image: url('../images/story_covers/space_adventure.jpg');">
+                    <h3 class="story-cover-title">太空冒险</h3>
+                    <div class="story-badge">新故事</div>
                 </div>
-                
                 <div class="story-info">
-                    <div class="story-time">06:45</div>
-                    <div class="story-title">太空冒险</div>
+                    <div class="story-meta">
+                        <div class="story-theme">
+                            <i class="fas fa-tag"></i>
+                            <span>太空冒险</span>
+                        </div>
+                        <div class="story-date">
+                            <i class="fas fa-calendar"></i>
+                            <span>2023-05-20</span>
+                        </div>
+                    </div>
+                    <div class="story-actions">
+                        <button class="story-play-button">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
-            
-            <div class="story-card fade-in" style="animation-delay: 0.2s;">
-                <div class="cassette-container" style="background-image: url('https://images.unsplash.com/photo-1582573732277-c5444fa37391?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80');">
-                    <div class="cassette">
-                        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="10" y="10" width="180" height="100" rx="10" fill="rgba(255,255,255,0.2)"/>
-                            <circle cx="60" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
-                            <circle cx="140" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
-                            <rect x="50" y="50" width="100" height="20" fill="rgba(255,255,255,0.3)"/>
-                        </svg>
-                    </div>
-                    <div class="cassette-label">小兔子的奇幻冒险</div>
-                </div>
-                
-                <div class="story-info">
-                    <div class="story-time">05:23</div>
-                    <div class="story-title">小兔子的奇幻冒险</div>
-                </div>
+        </div>
+
+        <!-- 无故事状态 -->
+        <div class="no-stories" id="noStories" style="display: none;">
+            <div class="no-stories-icon">
+                <i class="fas fa-book-open"></i>
             </div>
-            
-            <div class="story-card fade-in" style="animation-delay: 0.3s;">
-                <div class="cassette-container" style="background-image: url('https://images.unsplash.com/photo-1580541631971-a0e1561d8a8d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80');">
-                    <div class="cassette">
-                        <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="10" y="10" width="180" height="100" rx="10" fill="rgba(255,255,255,0.2)"/>
-                            <circle cx="60" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
-                            <circle cx="140" cy="60" r="25" fill="rgba(255,255,255,0.3)"/>
-                            <rect x="50" y="50" width="100" height="20" fill="rgba(255,255,255,0.3)"/>
-                        </svg>
-                    </div>
-                    <div class="cassette-label">海底探险记</div>
-                </div>
-                
-                <div class="story-info">
-                    <div class="story-time">07:15</div>
-                    <div class="story-title">海底探险记</div>
-                </div>
+            <div class="no-stories-text">
+                还没有故事，快来创建第一个故事吧！
             </div>
+            <button class="create-story-button" id="createFirstStoryBtn">
+                <i class="fas fa-plus"></i> 创建故事
+            </button>
         </div>
     </div>
     
@@ -693,168 +856,301 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     
     <script src="../js/common.js"></script>
+    <script src="../js/api.js"></script>
     <script>
         let isPlaying = false;
-        let progressInterval;
-        
-        // 添加日志函数
-        function log(message, level = 'info') {
-            const timestamp = new Date().toISOString();
-            const prefix = `[${timestamp}][HOME][${level.toUpperCase()}]`;
-            
-            switch(level) {
-                case 'error':
-                    console.error(`${prefix} ${message}`);
-                    break;
-                case 'warn':
-                    console.warn(`${prefix} ${message}`);
-                    break;
-                case 'debug':
-                    console.debug(`${prefix} ${message}`);
-                    break;
-                default:
-                    console.log(`${prefix} ${message}`);
-            }
-            
-            // 在页面上显示日志（仅在调试模式下）
-            if (window.location.search.includes('debug=true')) {
-                const logContainer = document.getElementById('logContainer') || createLogContainer();
-                const logEntry = document.createElement('div');
-                logEntry.className = `log-entry log-${level}`;
-                logEntry.textContent = `${prefix} ${message}`;
-                logContainer.appendChild(logEntry);
-                
-                // 保持最新日志可见
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-        }
-        
-        function createLogContainer() {
-            const container = document.createElement('div');
-            container.id = 'logContainer';
-            container.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; height: 150px; background: rgba(0,0,0,0.8); color: white; overflow-y: auto; z-index: 9999; font-family: monospace; font-size: 12px; padding: 10px;';
-            document.body.appendChild(container);
-            
-            // 添加样式
-            const style = document.createElement('style');
-            style.textContent = `
-                .log-entry { margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-                .log-error { color: #ff5252; }
-                .log-warn { color: #ffbc00; }
-                .log-debug { color: #8bc34a; }
-            `;
-            document.head.appendChild(style);
-            
-            return container;
-        }
+        let currentAudio = null;
+        let retryCount = 0;
+        let progressInterval = null;
+        const maxRetries = 3;
         
         // 初始化页面
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async () => {
             log('DOM内容加载完成，开始初始化页面');
             
             try {
                 log('初始化故事卡片');
-                initializeStoryCards();
+                await initializeStoryCards();
                 
                 log('初始化侧边栏');
-                initializeSidebar();
+                initSidebar();
                 
-                log('检查URL参数');
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('debug')) {
-                    log('调试模式已启用', 'debug');
-                }
+                log('初始化播放器控件');
+                initPlayerControls();
+                
+                log('初始化创建故事按钮');
+                initCreateStoryButton();
+                
+                log('替换猫咪图标');
+                replaceCatIcons();
                 
                 log('页面初始化完成');
             } catch (error) {
                 log(`页面初始化失败: ${error.message}`, 'error');
-                log(`错误堆栈: ${error.stack}`, 'error');
+                
+                // 显示错误提示
+                showErrorMessage('页面加载失败，请重试', () => {
+                    window.location.reload();
+                });
             }
             
-            // 检查DOM元素是否正确加载
-            validateDOMElements();
+            // 通知原生代码页面加载完成
+            try {
+                window.webkit.messageHandlers.pageLoaded.postMessage({
+                    page: 'home',
+                    status: 'success'
+                });
+            } catch (e) {
+                log('无法通知原生代码页面加载完成', 'warn');
+            }
         });
         
-        // 验证关键DOM元素
-        function validateDOMElements() {
-            log('验证关键DOM元素');
-            
-            const criticalElements = [
-                { id: 'toggleSidebar', name: '宝宝信息栏' },
-                { id: 'toggleSidebarBtn', name: '设置按钮' },
-                { id: 'storyPlayer', name: '故事播放器' },
-                { id: 'sidebar', name: '侧边栏' },
-                { id: 'sidebarOverlay', name: '侧边栏遮罩' }
-            ];
-            
-            let allValid = true;
-            
-            criticalElements.forEach(element => {
-                const domElement = document.getElementById(element.id);
-                if (!domElement) {
-                    log(`关键元素未找到: ${element.name} (ID: ${element.id})`, 'error');
-                    allValid = false;
-                } else {
-                    log(`已找到元素: ${element.name} (ID: ${element.id})`, 'debug');
-                }
-            });
-            
-            if (allValid) {
-                log('所有关键DOM元素验证通过');
-            } else {
-                log('DOM元素验证失败，页面可能无法正常工作', 'warn');
-            }
-            
-            // 检查样式是否正确应用
-            validateStyles();
-        }
-        
-        // 验证关键样式
-        function validateStyles() {
-            log('验证关键样式');
-            
-            try {
-                const bodyBgColor = getComputedStyle(document.body).backgroundColor;
-                log(`Body背景色: ${bodyBgColor}`, 'debug');
+        // 显示错误信息
+        function showErrorMessage(message, retryCallback) {
+            const mainContent = document.querySelector('main');
+            if (mainContent) {
+                mainContent.innerHTML = `
+                    <div class="error-state" style="margin: 50px 20px;">
+                        <div class="error-icon">❌</div>
+                        <h3>出错了</h3>
+                        <p>${message}</p>
+                        <button id="retryButton">重试</button>
+                    </div>
+                `;
                 
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent) {
-                    const mainContentDisplay = getComputedStyle(mainContent).display;
-                    log(`主内容区display: ${mainContentDisplay}`, 'debug');
-                } else {
-                    log('未找到主内容区元素', 'error');
-                }
-                
-                // 检查视口尺寸
-                log(`视口宽度: ${window.innerWidth}px, 高度: ${window.innerHeight}px`, 'debug');
-            } catch (error) {
-                log(`样式验证失败: ${error.message}`, 'error');
+                // 添加重试按钮点击事件
+                document.getElementById('retryButton').addEventListener('click', retryCallback);
             }
         }
         
         // 初始化故事卡片
-        function initializeStoryCards() {
-            const storyCards = document.querySelectorAll('.story-card');
-            log(`找到 ${storyCards.length} 个故事卡片`);
+        async function initializeStoryCards() {
+            const storyCardsContainer = document.getElementById('storyCards');
+            const noStoriesContainer = document.getElementById('noStories');
             
-            storyCards.forEach((card, index) => {
-                log(`初始化故事卡片 #${index + 1}`);
+            try {
+                // 获取故事列表
+                log('开始调用API获取故事列表');
+                let result;
+                try {
+                    result = await api.getStories();
+                    log(`成功获取故事列表: ${result.stories ? result.stories.length : 0}个故事`);
+                } catch (apiError) {
+                    log(`API调用失败: ${apiError.message}`, 'error');
+                    throw apiError; // 重新抛出错误，让外层catch处理
+                }
                 
-                card.addEventListener('click', () => {
-                    try {
-                        const title = card.querySelector('.story-title').textContent;
-                        const time = card.querySelector('.story-time').textContent;
-                        log(`点击故事卡片: "${title}", 时长: ${time}`);
-                        playStory(title, time);
-                    } catch (error) {
-                        log(`故事卡片点击处理失败: ${error.message}`, 'error');
-                    }
+                // 清空加载占位符
+                storyCardsContainer.innerHTML = '';
+                
+                // 检查是否有故事
+                if (!result.stories || result.stories.length === 0) {
+                    // 显示无故事状态
+                    storyCardsContainer.style.display = 'none';
+                    noStoriesContainer.style.display = 'flex';
+                    return;
+                }
+                
+                // 显示故事卡片
+                storyCardsContainer.style.display = 'flex';
+                noStoriesContainer.style.display = 'none';
+                
+                // 遍历故事列表，创建故事卡片
+                result.stories.forEach(story => {
+                    // 创建故事卡片元素
+                    const storyCard = document.createElement('div');
+                    storyCard.className = 'story-card';
+                    storyCard.dataset.id = story.id;
+                    
+                    // 随机选择一个背景图
+                    const backgroundIndex = Math.floor(Math.random() * 5) + 1;
+                    const backgroundImage = `../images/story_covers/cover_${backgroundIndex}.jpg`;
+                    
+                    // 判断是否为新故事（24小时内创建）
+                    const isNewStory = (new Date() - new Date(story.createdAt)) < 24 * 60 * 60 * 1000;
+                    
+                    // 设置卡片内容
+                    storyCard.innerHTML = `
+                        <div class="story-cover" style="background-image: url('${backgroundImage}');">
+                            <h3 class="story-cover-title">${story.title}</h3>
+                            ${isNewStory ? '<div class="story-badge">新故事</div>' : ''}
+                        </div>
+                        <div class="story-info">
+                            <div class="story-meta">
+                                <div class="story-theme">
+                                    <i class="fas fa-tag"></i>
+                                    <span>${story.theme}</span>
+                                </div>
+                                <div class="story-date">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>${formatDate(new Date(story.createdAt))}</span>
+                                </div>
+                            </div>
+                            <div class="story-actions">
+                                <button class="story-play-button" data-id="${story.id}" data-audio="${story.audioURL || ''}">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // 添加到故事列表
+                    storyCardsContainer.appendChild(storyCard);
                 });
-            });
+                
+                // 添加播放按钮点击事件
+                document.querySelectorAll('.story-play-button').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        event.stopPropagation(); // 阻止事件冒泡
+                        const storyId = button.getAttribute('data-id');
+                        const audioURL = button.getAttribute('data-audio');
+                        
+                        // 如果有音频URL，直接播放
+                        if (audioURL && audioURL !== '') {
+                            try {
+                                await api.playAudio(audioURL);
+                                showToast('开始播放故事');
+                            } catch (error) {
+                                console.error('播放故事失败:', error);
+                                showToast(`播放失败: ${error.message}`);
+                            }
+                        } else {
+                            // 否则跳转到故事详情页
+                            location.href = `story_detail.html?id=${storyId}`;
+                        }
+                    });
+                });
+                
+                // 添加故事卡片点击事件
+                document.querySelectorAll('.story-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const storyId = card.dataset.id;
+                        location.href = `story_detail.html?id=${storyId}`;
+                    });
+                });
+            } catch (error) {
+                console.error('获取故事列表失败:', error);
+                
+                // 显示错误提示
+                storyCardsContainer.innerHTML = `
+                    <div class="error-state">
+                        <div class="error-icon">❌</div>
+                        <h3>获取故事失败</h3>
+                        <p>${error.message}</p>
+                        <button onclick="location.reload()">重试</button>
+                    </div>
+                `;
+                
+                // 如果是网络错误，尝试使用本地模拟数据
+                if (error.message.includes('网络') || error.message.includes('connection') || retryCount < maxRetries) {
+                    retryCount++;
+                    log(`尝试使用本地模拟数据，重试次数: ${retryCount}`, 'warn');
+                    
+                    // 使用模拟数据
+                    const mockStories = [
+                        {
+                            id: 'story_1',
+                            title: '小明的魔法冒险',
+                            content: '从前有一个小朋友叫小明...',
+                            theme: '魔法世界',
+                            childName: '小明',
+                            createdAt: new Date().toISOString()
+                        },
+                        {
+                            id: 'story_2',
+                            title: '海底探险记',
+                            content: '小红和她的朋友们来到了神秘的海底世界...',
+                            theme: '海底世界',
+                            childName: '小红',
+                            createdAt: new Date().toISOString()
+                        }
+                    ];
+                    
+                    if (mockStories.length === 0) {
+                        // 显示无故事状态
+                        storyCardsContainer.style.display = 'none';
+                        noStoriesContainer.style.display = 'flex';
+                        return;
+                    }
+                    
+                    // 显示故事卡片
+                    storyCardsContainer.style.display = 'flex';
+                    noStoriesContainer.style.display = 'none';
+                    
+                    // 清空错误提示
+                    storyCardsContainer.innerHTML = '';
+                    
+                    // 创建模拟故事卡片
+                    mockStories.forEach(story => {
+                        // 创建故事卡片元素
+                        const storyCard = document.createElement('div');
+                        storyCard.className = 'story-card';
+                        storyCard.dataset.id = story.id;
+                        
+                        // 随机选择一个背景图
+                        const backgroundIndex = Math.floor(Math.random() * 5) + 1;
+                        const backgroundImage = `../images/story_covers/cover_${backgroundIndex}.jpg`;
+                        
+                        // 设置卡片内容
+                        storyCard.innerHTML = `
+                            <div class="story-cover" style="background-image: url('${backgroundImage}');">
+                                <h3 class="story-cover-title">${story.title}</h3>
+                            </div>
+                            <div class="story-info">
+                                <div class="story-meta">
+                                    <div class="story-theme">
+                                        <i class="fas fa-tag"></i>
+                                        <span>${story.theme}</span>
+                                    </div>
+                                    <div class="story-date">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>${formatDate(new Date(story.createdAt))}</span>
+                                    </div>
+                                </div>
+                                <div class="story-actions">
+                                    <button class="story-play-button" data-id="${story.id}">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // 添加到故事列表
+                        storyCardsContainer.appendChild(storyCard);
+                    });
+                    
+                    // 添加提示
+                    const notice = document.createElement('div');
+                    notice.className = 'notice';
+                    notice.innerHTML = `
+                        <p style="text-align: center; color: #666; margin-top: 20px; font-size: 0.9rem;">
+                            <i class="fas fa-info-circle"></i> 当前显示的是模拟数据，网络连接恢复后将自动更新
+                        </p>
+                    `;
+                    storyCardsContainer.appendChild(notice);
+                    
+                    // 添加播放按钮点击事件
+                    document.querySelectorAll('.story-play-button').forEach(button => {
+                        button.addEventListener('click', (event) => {
+                            event.stopPropagation(); // 阻止事件冒泡
+                            const storyId = button.getAttribute('data-id');
+                            location.href = `story_detail.html?id=${storyId}&mock=true`;
+                        });
+                    });
+                    
+                    // 添加故事卡片点击事件
+                    document.querySelectorAll('.story-card').forEach(card => {
+                        card.addEventListener('click', () => {
+                            const storyId = card.dataset.id;
+                            location.href = `story_detail.html?id=${storyId}&mock=true`;
+                        });
+                    });
+                }
+            }
         }
         
         // 初始化侧边栏
-        function initializeSidebar() {
+        function initSidebar() {
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
             const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
@@ -929,35 +1225,12 @@
             }
         }
         
-        // 关闭播放器
-        function closePlayer() {
-            log('关闭故事播放器');
-            
-            const player = document.getElementById('storyPlayer');
-            if (!player) {
-                log('未找到故事播放器元素', 'error');
-                return;
-            }
-            
-            player.classList.remove('active');
-            
-            // 停止播放
-            isPlaying = false;
-            clearInterval(progressInterval);
-            const playIcon = document.getElementById('playIcon');
-            if (playIcon) {
-                playIcon.classList.remove('fa-pause');
-                playIcon.classList.add('fa-play');
-            }
-            
-            log('故事播放器已关闭');
-        }
-        
         // 切换播放/暂停
         function togglePlay() {
+            log('切换播放状态');
             const playIcon = document.getElementById('playIcon');
             if (!playIcon) {
-                log('未找到播放图标元素', 'error');
+                log('未找到播放图标', 'error');
                 return;
             }
             
@@ -977,16 +1250,34 @@
             }
         }
         
-        // 上一段
-        function previousTrack() {
-            log('切换到上一段');
-            showToast('切换到上一段');
+        // 关闭播放器
+        function closePlayer() {
+            log('关闭播放器');
+            const player = document.getElementById('storyPlayer');
+            if (player) {
+                player.style.display = 'none';
+            }
+            
+            // 停止播放
+            isPlaying = false;
+            clearInterval(progressInterval);
+            const playIcon = document.getElementById('playIcon');
+            if (playIcon) {
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+            }
         }
         
-        // 下一段
+        // 上一曲
+        function previousTrack() {
+            log('切换到上一曲');
+            showToast('切换到上一曲');
+        }
+        
+        // 下一曲
         function nextTrack() {
-            log('切换到下一段');
-            showToast('切换到下一段');
+            log('切换到下一曲');
+            showToast('切换到下一曲');
         }
         
         // 模拟进度
@@ -1075,26 +1366,79 @@
             }
         }
         
+        // 格式化日期
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
         // 添加页面加载完成日志
-        window.addEventListener('load', function() {
-            log('页面完全加载完成，包括所有依赖资源');
-            
-            // 检查是否有错误
-            if (document.querySelectorAll('.log-error').length > 0) {
-                log('页面加载过程中发现错误，请检查上方日志', 'warn');
+        window.addEventListener('load', () => {
+            log('页面完全加载完成');
+        });
+        
+        // 初始化创建故事按钮
+        function initCreateStoryButton() {
+            const createStoryBtn = document.getElementById('createFirstStoryBtn');
+            if (createStoryBtn) {
+                log('找到创建故事按钮，添加点击事件');
+                createStoryBtn.addEventListener('click', () => {
+                    log('点击创建故事按钮');
+                    window.location.href = 'story_themes.html';
+                });
+            } else {
+                log('未找到创建故事按钮', 'warn');
             }
-        });
+            
+            // 也可能存在其他创建故事按钮
+            const otherCreateBtns = document.querySelectorAll('.new-story-btn, .create-story-button');
+            otherCreateBtns.forEach(btn => {
+                if (btn.id !== 'createFirstStoryBtn') {
+                    log('找到其他创建故事按钮，添加点击事件');
+                    btn.addEventListener('click', () => {
+                        log('点击创建故事按钮');
+                        window.location.href = 'story_themes.html';
+                    });
+                }
+            });
+        }
         
-        // 捕获全局错误
-        window.onerror = function(message, source, lineno, colno, error) {
-            log(`全局错误: ${message} (${source}:${lineno}:${colno})`, 'error');
-            return false;
-        };
+        // 初始化播放器控件
+        function initPlayerControls() {
+            log('初始化播放器控件');
+            
+            // 播放/暂停按钮
+            const playButton = document.querySelector('.control-button.primary');
+            if (playButton) {
+                playButton.addEventListener('click', togglePlay);
+            }
+            
+            // 关闭播放器按钮
+            const closePlayerButton = document.querySelector('.close-player');
+            if (closePlayerButton) {
+                closePlayerButton.addEventListener('click', closePlayer);
+            }
+            
+            // 上一曲按钮
+            const prevButton = document.querySelector('.control-button:nth-child(1)');
+            if (prevButton) {
+                prevButton.addEventListener('click', previousTrack);
+            }
+            
+            // 下一曲按钮
+            const nextButton = document.querySelector('.control-button:nth-child(3)');
+            if (nextButton) {
+                nextButton.addEventListener('click', nextTrack);
+            }
+        }
         
-        // 捕获未处理的Promise错误
-        window.addEventListener('unhandledrejection', function(event) {
-            log(`未处理的Promise错误: ${event.reason}`, 'error');
-        });
+        // 替换猫咪图标（如果有的话）
+        function replaceCatIcons() {
+            log('检查是否需要替换猫咪图标');
+            // 这个函数可能在其他地方被调用，但在这里我们只是提供一个空实现
+        }
     </script>
 </body>
 </html> 

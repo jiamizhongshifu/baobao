@@ -59,4 +59,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneDidEnterBackground(_ scene: UIScene) {
         logger.info("场景已进入后台")
     }
-} 
+
+
+}
+

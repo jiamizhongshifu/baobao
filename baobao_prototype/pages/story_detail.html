@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>故事详情 - 宝宝故事</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/story_detail.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .story-detail-container {
+            padding: 20px;
+        }
+        
+        .story-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .story-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .story-meta {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .story-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .story-content {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .story-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .action-button {
+            flex: 1;
+            margin: 0 5px;
+            padding: 12px;
+            border-radius: 25px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .play-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .play-button:hover {
+            background-color: #3e8e41;
+        }
+        
+        .pause-button {
+            background-color: #FF9800;
+            color: white;
+        }
+        
+        .pause-button:hover {
+            background-color: #F57C00;
+        }
+        
+        .back-button {
+            background-color: #9E9E9E;
+            color: white;
+        }
+        
+        .back-button:hover {
+            background-color: #757575;
+        }
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 70vh;
+        }
+        
+        .audio-progress {
+            width: 100%;
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .audio-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="back-nav">
+                <button onclick="history.back()" class="back-nav-button">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>故事详情</h1>
+            </div>
+        </header>
+        
+        <main>
+            <div class="story-detail-container" id="storyDetailContainer">
+                <!-- 加载状态 -->
+                <div class="loading-container" id="loadingContainer">
+                    <div class="spinner"></div>
+                    <p>正在加载故事...</p>
+                </div>
+                
+                <!-- 错误状态 -->
+                <div class="error-container" id="errorContainer" style="display: none;">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="error-message" id="errorMessage">
+                        加载故事时出错
+                    </div>
+                    <button class="retry-button" id="retryButton">
+                        <i class="fas fa-redo"></i> 重试
+                    </button>
+                </div>
+                
+                <!-- 故事详情 -->
+                <div class="story-detail" id="storyDetail" style="display: none;">
+                    <!-- 故事封面 -->
+                    <div class="story-cover" id="storyCover">
+                        <!-- 封面背景图会通过JavaScript设置 -->
+                    </div>
+                    
+                    <!-- 故事标题和元数据 -->
+                    <div class="story-header">
+                        <h2 class="story-title" id="storyTitle">故事标题</h2>
+                        <div class="story-meta">
+                            <div class="story-meta-item">
+                                <i class="fas fa-child"></i>
+                                <span id="storyChild">小明</span>
+                            </div>
+                            <div class="story-meta-item">
+                                <i class="fas fa-tag"></i>
+                                <span id="storyTheme">魔法世界</span>
+                            </div>
+                            <div class="story-meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span id="storyDate">2023-05-20</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 音频控制器 -->
+                    <div class="audio-controls" id="audioControls">
+                        <div class="audio-progress">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                        <div class="audio-time">
+                            <span id="currentTime">00:00</span>
+                            <span id="totalTime">00:00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 故事内容 -->
+                    <div class="story-content" id="storyContent">
+                        故事内容将在这里显示...
+                    </div>
+                    
+                    <!-- 故事操作按钮 -->
+                    <div class="story-actions">
+                        <button class="action-button back-button" onclick="history.back()">
+                            <i class="fas fa-arrow-left"></i> 返回
+                        </button>
+                        <button class="action-button play-button" id="playButton">
+                            <i class="fas fa-play"></i> 播放
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="../js/common.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        // 全局变量
+        let storyData = null;
+        let isPlaying = false;
+        let audioInterval = null;
+        let audioStartTime = 0;
+        let audioDuration = 0;
+        
+        // 页面加载完成后获取故事详情
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // 获取故事ID
+                const urlParams = new URLSearchParams(window.location.search);
+                const storyId = urlParams.get('id');
+                
+                if (!storyId) {
+                    showError('未找到故事ID，请返回首页重试');
+                    return;
+                }
+                
+                // 获取故事详情
+                const result = await api.getStoryDetail(storyId);
+                storyData = result.story;
+                
+                // 显示故事详情
+                displayStoryDetail(storyData);
+            } catch (error) {
+                console.error('获取故事详情失败:', error);
+                showError(`获取故事详情失败: ${error.message}`);
+            }
+        });
+        
+        // 显示故事详情
+        function displayStoryDetail(story) {
+            // 隐藏加载中
+            document.getElementById('loadingContainer').style.display = 'none';
+            
+            // 显示故事详情
+            document.getElementById('storyDetail').style.display = 'block';
+            
+            // 随机选择一个背景图
+            const backgroundIndex = Math.floor(Math.random() * 5) + 1;
+            const backgroundImage = `../images/story_covers/cover_${backgroundIndex}.jpg`;
+            
+            // 设置故事封面
+            const storyCover = document.getElementById('storyCover');
+            storyCover.style.backgroundImage = `url('${backgroundImage}')`;
+            
+            // 设置故事标题
+            document.getElementById('storyTitle').textContent = story.title;
+            
+            // 设置故事元数据
+            document.getElementById('storyChild').textContent = story.childName;
+            document.getElementById('storyTheme').textContent = story.theme;
+            document.getElementById('storyDate').textContent = formatDate(new Date(story.createdAt));
+            
+            // 设置故事内容
+            document.getElementById('storyContent').textContent = story.content;
+            
+            // 设置音频时长
+            if (story.audioDuration) {
+                audioDuration = story.audioDuration;
+                document.getElementById('totalTime').textContent = formatTime(audioDuration);
+            } else {
+                // 如果没有音频时长，估算一个（假设每个字0.3秒）
+                audioDuration = story.content.length * 0.3;
+                document.getElementById('totalTime').textContent = formatTime(audioDuration);
+            }
+            
+            // 设置播放按钮点击事件
+            document.getElementById('playButton').addEventListener('click', togglePlayPause);
+            
+            // 设置重试按钮点击事件
+            document.getElementById('retryButton').addEventListener('click', () => {
+                location.reload();
+            });
+        }
+        
+        // 显示错误信息
+        function showError(message) {
+            document.getElementById('loadingContainer').style.display = 'none';
+            document.getElementById('storyDetail').style.display = 'none';
+            
+            const errorContainer = document.getElementById('errorContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorMessage.textContent = message;
+            errorContainer.style.display = 'flex';
+        }
+        
+        // 切换播放/暂停状态
+        function togglePlayPause() {
+            const playButton = document.getElementById('playButton');
+            
+            if (isPlaying) {
+                // 暂停播放
+                isPlaying = false;
+                clearInterval(audioInterval);
+                
+                // 更新按钮样式
+                playButton.className = 'action-button play-button';
+                playButton.innerHTML = '<i class="fas fa-play"></i> 播放';
+            } else {
+                // 开始播放
+                isPlaying = true;
+                audioStartTime = Date.now() - (parseFloat(document.getElementById('progressBar').style.width) / 100 * audioDuration * 1000);
+                
+                // 更新进度条
+                updateProgress();
+                audioInterval = setInterval(updateProgress, 100);
+                
+                // 更新按钮样式
+                playButton.className = 'action-button pause-button';
+                playButton.innerHTML = '<i class="fas fa-pause"></i> 暂停';
+            }
+        }
+        
+        // 更新进度条
+        function updateProgress() {
+            const elapsedTime = (Date.now() - audioStartTime) / 1000;
+            const progressPercent = Math.min(100, (elapsedTime / audioDuration) * 100);
+            
+            // 更新进度条
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            
+            // 更新当前时间
+            document.getElementById('currentTime').textContent = formatTime(elapsedTime);
+            
+            // 如果播放完毕，重置状态
+            if (progressPercent >= 100) {
+                isPlaying = false;
+                clearInterval(audioInterval);
+                
+                // 更新按钮样式
+                const playButton = document.getElementById('playButton');
+                playButton.className = 'action-button play-button';
+                playButton.innerHTML = '<i class="fas fa-play"></i> 播放';
+            }
+        }
+        
+        // 格式化时间（秒 -> MM:SS）
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // 格式化日期
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    </script>
+</body>
+</html> 

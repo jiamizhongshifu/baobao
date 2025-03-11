@@ -8,6 +8,7 @@
 import UIKit
 import os.log
 
+@main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     // 创建专用的日志记录器
     private let logger = Logger(subsystem: "com.baobao.app", category: "lifecycle")
@@ -116,4 +117,5 @@ extension UIApplication.State {
             return "未知"
         }
     }
-} 
+}
+
