@@ -1,0 +1,128 @@
+{
+  "projectName": "宝宝故事应用",
+  "version": "1.0.0",
+  "description": "宝宝故事应用代码规范和最佳实践",
+  "lastUpdated": "2023-03-11",
+  "generalPrinciples": {
+    "documentation": "所有公开API必须有文档注释",
+    "testCoverage": "重要功能必须有单元测试",
+    "errorHandling": "所有可能出错的代码必须有适当的错误处理",
+    "logging": "使用统一的日志系统，分级记录日志",
+    "localization": "所有用户可见的文本必须支持本地化"
+  },
+  "swiftStandards": {
+    "swiftVersion": "5.5+",
+    "deploymentTarget": "iOS 15.0+",
+    "architecturePattern": "MVVM + Coordinator",
+    "dependencyInjection": "使用属性注入或构造函数注入",
+    "concurrency": "使用Swift并发系统（async/await）",
+    "memoryManagement": {
+      "useOfWeakReferences": "避免循环引用",
+      "deinitCleanup": "在deinit中清理资源"
+    },
+    "accessControl": {
+      "defaults": "使用private、fileprivate适当限制访问范围",
+      "extensions": "使用extension组织代码功能"
+    },
+    "errorHandling": {
+      "useThrowingFunctions": "使用throws传递错误",
+      "errorTypes": "定义明确的Error类型，不使用NSError",
+      "resultType": "适当使用Result<Success, Failure>类型"
+    },
+    "bestPractices": {
+      "swiftUI": "优先使用SwiftUI构建UI",
+      "uiKit": "在需要更多控制时使用UIKit",
+      "propertyWrappers": "适当使用@State、@Published等属性包装器",
+      "protocols": "优先使用协议定义接口",
+      "valueTypes": "优先使用结构体而非类",
+      "typeInference": "在明确类型的情况下利用类型推断提高代码简洁性"
+    }
+  },
+  "webViewStandards": {
+    "javaScriptBridge": {
+      "messagePassing": "使用WKScriptMessageHandler进行消息传递",
+      "errorHandling": "捕获并处理所有JavaScript错误",
+      "securityChecks": "验证所有从JavaScript接收的数据"
+    },
+    "performance": {
+      "resourceLoading": "监控资源加载情况",
+      "memoryManagement": "监控内存使用情况，定期清理缓存",
+      "processManagement": "处理WebView进程终止情况"
+    },
+    "security": {
+      "contentSecurity": "实施适当的内容安全策略",
+      "localFileAccess": "正确配置本地文件访问权限",
+      "dataValidation": "验证所有输入数据"
+    }
+  },
+  "htmlCssStandards": {
+    "html": {
+      "semantics": "使用语义化标签",
+      "accessibility": "确保所有UI元素可访问",
+      "validation": "HTML必须通过W3C验证"
+    },
+    "css": {
+      "methodology": "使用BEM命名方法论",
+      "organization": "按照功能组织CSS",
+      "responsiveness": "使用移动优先的响应式设计",
+      "variables": "使用CSS变量定义颜色和主题",
+      "avoidInline": "避免内联样式"
+    }
+  },
+  "javascriptStandards": {
+    "es6Features": "使用ES6+特性",
+    "modularity": "使用模块化开发",
+    "asyncHandling": {
+      "promises": "使用Promise处理异步操作",
+      "asyncAwait": "使用async/await简化异步代码"
+    },
+    "errorHandling": {
+      "tryCache": "使用try/catch捕获同步错误",
+      "promiseRejection": "处理所有Promise拒绝",
+      "errorReporting": "将错误报告给原生代码"
+    },
+    "performance": {
+      "eventDelegation": "使用事件委托",
+      "domManipulation": "最小化DOM操作",
+      "debounceThrottle": "使用防抖和节流优化事件处理"
+    }
+  },
+  "reviewProcess": {
+    "codeReview": {
+      "required": true,
+      "approvals": 1,
+      "focusAreas": [
+        "功能完整性",
+        "代码质量",
+        "性能影响",
+        "安全考虑",
+        "测试覆盖"
+      ]
+    },
+    "ciProcess": {
+      "linting": "使用SwiftLint进行代码检查",
+      "testing": "运行单元测试和UI测试",
+      "buildVerification": "确保代码可以构建并运行"
+    }
+  },
+  "versionControl": {
+    "branchingStrategy": "GitFlow",
+    "commitMessages": {
+      "format": "<type>: <description>",
+      "types": [
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "perf",
+        "test",
+        "chore"
+      ]
+    },
+    "releaseProcess": {
+      "versioning": "语义化版本控制",
+      "changelogGeneration": "自动生成变更日志"
+    }
+  }
+} 

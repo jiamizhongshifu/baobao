@@ -1,0 +1,226 @@
+{
+  "projectName": "宝宝故事应用",
+  "version": "1.0.0",
+  "description": "基于iOS设计风格的儿童故事应用设计系统",
+  "lastUpdated": "2023-03-11",
+  "designSystem": {
+    "colorSystem": {
+      "primary": {
+        "babyBlue": "#A1C4FD",
+        "darkBlue": "#667EEA",
+        "lightBlue": "#E0EAFC"
+      },
+      "neutral": {
+        "white": "#FFFFFF",
+        "lightGray": "#F2F2F7",
+        "mediumGray": "#E5E5EA",
+        "darkGray": "#8E8E93",
+        "black": "#333333"
+      },
+      "semantic": {
+        "success": "#4CD964",
+        "warning": "#FFCC00",
+        "error": "#FF3B30",
+        "info": "#5AC8FA"
+      },
+      "background": {
+        "light": "#F9F9F9",
+        "card": "#FFFFFF"
+      }
+    },
+    "typography": {
+      "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      "fontSizes": {
+        "small": "14px",
+        "medium": "16px",
+        "large": "18px",
+        "title": "24px",
+        "headline": "36px"
+      },
+      "fontWeights": {
+        "regular": "400",
+        "medium": "500",
+        "semibold": "600",
+        "bold": "700"
+      },
+      "lineHeights": {
+        "tight": "1.2",
+        "normal": "1.5",
+        "loose": "1.8"
+      }
+    },
+    "spacing": {
+      "xs": "5px",
+      "sm": "10px",
+      "md": "15px",
+      "lg": "20px",
+      "xl": "30px",
+      "xxl": "40px"
+    },
+    "borderRadius": {
+      "small": "8px",
+      "medium": "12px",
+      "large": "16px",
+      "card": "24px",
+      "button": "10px",
+      "circle": "50%"
+    },
+    "shadows": {
+      "small": "0 2px 5px rgba(0, 0, 0, 0.05)",
+      "medium": "0 4px 12px rgba(0, 0, 0, 0.1)",
+      "large": "0 8px 20px rgba(0, 0, 0, 0.15)"
+    },
+    "animations": {
+      "durations": {
+        "fast": "0.2s",
+        "normal": "0.3s",
+        "slow": "0.5s"
+      },
+      "easings": {
+        "default": "ease",
+        "bounce": "cubic-bezier(0.68, -0.55, 0.27, 1.55)",
+        "smooth": "cubic-bezier(0.25, 0.1, 0.25, 1)"
+      }
+    }
+  },
+  "componentSystem": {
+    "buttons": {
+      "primary": {
+        "class": "ios-button",
+        "background": "var(--baby-blue)",
+        "color": "white",
+        "padding": "12px 20px",
+        "borderRadius": "10px",
+        "fontWeight": "600"
+      },
+      "secondary": {
+        "class": "ios-button secondary",
+        "background": "#A1C4FD",
+        "color": "white"
+      },
+      "actionButton": {
+        "class": "big-action-button",
+        "background": "linear-gradient(135deg, #A1C4FD 0%, #667EEA 100%)",
+        "boxShadow": "0 8px 20px rgba(161, 196, 253, 0.4)"
+      },
+      "circleButton": {
+        "class": "circle-icon-button",
+        "borderRadius": "50%"
+      }
+    },
+    "cards": {
+      "basic": {
+        "class": "ios-card",
+        "background": "white",
+        "borderRadius": "24px",
+        "boxShadow": "0 8px 20px rgba(0, 0, 0, 0.05)"
+      },
+      "storyCard": {
+        "class": "card",
+        "borderRadius": "12px",
+        "padding": "15px",
+        "transition": "transform 0.2s, box-shadow 0.2s"
+      }
+    },
+    "inputs": {
+      "default": {
+        "class": "ios-input",
+        "padding": "12px 15px",
+        "borderRadius": "10px",
+        "border": "1px solid #E5E5EA"
+      }
+    },
+    "lists": {
+      "default": {
+        "class": "ios-list",
+        "background": "white",
+        "borderRadius": "16px"
+      },
+      "listItem": {
+        "class": "ios-list-item",
+        "padding": "15px",
+        "borderBottom": "1px solid #F2F2F7"
+      }
+    },
+    "feedback": {
+      "loading": {
+        "class": "loading",
+        "spinner": "loading-spinner"
+      },
+      "toast": {
+        "class": "toast",
+        "background": "rgba(0, 0, 0, 0.8)",
+        "color": "white",
+        "borderRadius": "25px"
+      },
+      "errorState": {
+        "class": "error-state",
+        "color": "#FF3B30"
+      },
+      "emptyState": {
+        "class": "empty-state",
+        "color": "#8E8E93"
+      }
+    }
+  },
+  "codeStyle": {
+    "swift": {
+      "naming": {
+        "classes": "PascalCase",
+        "variables": "camelCase",
+        "constants": "camelCase",
+        "functions": "camelCase",
+        "enums": "PascalCase",
+        "enumCases": "camelCase"
+      },
+      "organization": {
+        "imports": "组织在文件顶部",
+        "classStructure": [
+          "属性",
+          "初始化方法",
+          "生命周期方法",
+          "公共方法",
+          "私有方法",
+          "委托方法"
+        ],
+        "markComments": "使用 // MARK: - 分隔代码段"
+      },
+      "documentation": {
+        "required": true,
+        "style": "/// 三斜线注释",
+        "includeParameters": true,
+        "includeReturns": true,
+        "includeThrows": true
+      }
+    },
+    "html": {
+      "indentation": 4,
+      "quoteStyle": "double",
+      "selfClosingTags": "/>"
+    },
+    "css": {
+      "naming": "kebab-case",
+      "organization": [
+        "定位属性",
+        "盒模型属性",
+        "排版属性",
+        "视觉属性",
+        "其他属性"
+      ],
+      "prefixes": {
+        "ios": "iOS风格组件"
+      }
+    },
+    "javascript": {
+      "naming": {
+        "variables": "camelCase",
+        "constants": "UPPER_SNAKE_CASE",
+        "functions": "camelCase",
+        "classes": "PascalCase"
+      },
+      "modularity": "使用模块化开发",
+      "errorHandling": "必须处理所有Promise错误",
+      "logging": "使用统一的日志系统"
+    }
+  }
+} 

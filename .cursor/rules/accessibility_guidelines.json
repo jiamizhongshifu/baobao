@@ -1,0 +1,109 @@
+{
+  "projectName": "宝宝故事应用",
+  "version": "1.0.0",
+  "description": "宝宝故事应用可访问性指南",
+  "lastUpdated": "2023-03-11",
+  "accessibility": {
+    "vision": {
+      "colorContrast": {
+        "standard": "WCAG 2.1 AA",
+        "normalText": "4.5:1",
+        "largeText": "3:1",
+        "uiComponents": "3:1"
+      },
+      "textSize": {
+        "minimumSize": "14px",
+        "scaling": "支持动态类型",
+        "lineHeight": "适应文本大小的线高"
+      },
+      "darkMode": {
+        "support": true,
+        "contrast": "保持高对比度",
+        "testing": "在浅色和深色模式下测试"
+      },
+      "images": {
+        "alternativeText": "所有图像必须有替代文本",
+        "decorativeImages": "装饰性图片需标记为装饰性",
+        "contrast": "重要图像需足够对比度"
+      }
+    },
+    "interaction": {
+      "touchTargets": {
+        "minimumSize": "44x44 pt",
+        "spacing": "最小间距8pt"
+      },
+      "gestures": {
+        "alternatives": "复杂手势需提供替代方式",
+        "feedback": "交互提供清晰反馈"
+      },
+      "keyboard": {
+        "focusVisibility": "键盘焦点必须明显可见",
+        "tabOrder": "合理的Tab顺序",
+        "shortcuts": "重要功能提供键盘快捷方式"
+      }
+    },
+    "hearing": {
+      "captions": {
+        "videos": "所有视频需提供字幕",
+        "autoplay": "避免自动播放音频"
+      },
+      "alternatives": {
+        "audioFeedback": "声音反馈需有视觉替代",
+        "transcripts": "语音内容需提供文本转录"
+      }
+    },
+    "cognitive": {
+      "readability": {
+        "language": "使用简单、明确的语言",
+        "structure": "内容有明确的层次结构"
+      },
+      "navigation": {
+        "consistency": "导航模式保持一致",
+        "breadcrumbs": "提供返回路径",
+        "predictability": "行为结果应可预测"
+      },
+      "errors": {
+        "prevention": "设计以防止错误",
+        "recovery": "错误恢复机制",
+        "messages": "错误信息清晰且有指导性"
+      },
+      "time": {
+        "timeouts": "避免时间限制",
+        "extensions": "若有时间限制，提供延长选项"
+      }
+    },
+    "contentSpecific": {
+      "stories": {
+        "readingLevels": "根据年龄提供不同阅读级别",
+        "audioOptions": "提供故事朗读功能",
+        "illustrations": "确保插图内容包含在替代文本中",
+        "interactiveElements": "交互元素有清晰指示"
+      },
+      "learning": {
+        "multipleWays": "以多种方式呈现学习内容",
+        "progressTracking": "清晰显示学习进度",
+        "feedback": "提供即时反馈"
+      }
+    },
+    "testing": {
+      "automated": {
+        "tools": ["Xcode Accessibility Inspector", "WCAG检查工具"],
+        "frequency": "每次发布前"
+      },
+      "manual": {
+        "screenReader": "使用VoiceOver测试",
+        "keyboardOnly": "不使用触摸屏测试",
+        "highContrast": "高对比度模式测试"
+      },
+      "userTesting": {
+        "diverseUsers": "包括有特殊需求的用户",
+        "scenarios": "测试关键用户场景"
+      }
+    },
+    "documentation": {
+      "accessibilityStatement": "在应用中提供可访问性声明",
+      "helpResources": "提供无障碍使用指南",
+      "feedbackChannel": "为无障碍问题设专门反馈渠道"
+    }
+  }
+} 
