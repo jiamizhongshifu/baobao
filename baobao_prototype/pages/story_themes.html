@@ -291,8 +291,8 @@
     </div>
     
     <div class="bottom-bar">
-        <div class="story-credits">
-            <div class="credits-amount">2</div>
+        <div class="story-credits" id="storyCredits">
+            <div class="credits-amount" id="creditsAmount"></div>
             <div class="credits-label">故事卡余额</div>
         </div>
         
@@ -306,9 +306,24 @@
         // 主题卡片点击事件
         const themeCards = document.querySelectorAll('.theme-card');
         const startButton = document.getElementById('createStoryBtn');
+        const creditsAmount = document.getElementById('creditsAmount');
         
-        // 应用弹出动画，错开时间
+        // 显示剩余故事创建次数
         document.addEventListener('DOMContentLoaded', function() {
+            // 初始化故事创建次数（如果是首次使用）
+            if (typeof initStoryCredits === 'function') {
+                initStoryCredits();
+            }
+            
+            // 显示剩余故事创建次数
+            if (typeof displayRemainingCredits === 'function') {
+                displayRemainingCredits('creditsAmount');
+            } else {
+                // 如果函数未定义，直接显示默认值
+                creditsAmount.textContent = '3';
+            }
+            
+            // 应用弹出动画，错开时间
             themeCards.forEach(card => {
                 const delay = parseInt(card.getAttribute('data-delay'));
                 setTimeout(() => {
@@ -337,8 +352,25 @@
         startButton.addEventListener('click', () => {
             const selectedCard = document.querySelector('.theme-card.selected');
             if (selectedCard) {
+                // 检查是否有足够的故事创建次数
+                if (typeof hasEnoughCredits === 'function' && !hasEnoughCredits()) {
+                    // 显示会员提示
+                    if (typeof showMembershipPrompt === 'function') {
+                        showMembershipPrompt();
+                    } else {
+                        showToast('您的故事卡已用完，请升级为会员继续使用');
+                    }
+                    return;
+                }
+                
                 // 保存选择的主题，直接跳转到故事生成页
                 const theme = selectedCard.querySelector('.theme-title').textContent;
+                
+                // 准备故事生成数据
+                if (typeof prepareStoryGeneration === 'function') {
+                    prepareStoryGeneration(theme);
+                }
+                
                 window.location.href = `story_generation.html?theme=${encodeURIComponent(theme)}`;
             } else {
                 showToast('请先选择一个故事主题');

@@ -79,6 +79,30 @@ const auth = {
                 Logger.error(`通知iOS原生应用失败: ${error.message}`, 'AUTH');
             }
         }
+        
+        // 根据用户是否首次登录决定跳转到哪个页面
+        this.handleLoginSuccess();
+    },
+    
+    /**
+     * 处理登录成功后的导航
+     */
+    handleLoginSuccess: function() {
+        // 如果当前在登录页面
+        if (window.location.pathname.includes('login.html')) {
+            // 检查是否首次登录（没有添加过宝宝）
+            const isFirstLogin = !localStorage.getItem('hasAddedBaby');
+            
+            if (isFirstLogin) {
+                // 首次登录，导航到宝宝管理页面
+                Logger.info('首次登录，跳转到宝宝管理页面', 'AUTH');
+                window.location.href = 'baby_management.html';
+            } else {
+                // 非首次登录，导航到主页
+                Logger.info('非首次登录，跳转到主页', 'AUTH');
+                window.location.href = 'home.html';
+            }
+        }
     },
     
     // 使用Apple ID登录

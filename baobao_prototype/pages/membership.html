@@ -294,9 +294,43 @@
     <button class="subscribe-button">订阅</button>
     <div class="terms-text">现在使用，可随时取消</div>
 
+    <script src="../js/common.js"></script>
     <script>
-        // 初始化会员卡选择
+        // 检查是否从故事创建页面跳转过来
+        let fromStoryCreation = false;
+        
         document.addEventListener('DOMContentLoaded', function() {
+            // 获取URL参数
+            const urlParams = new URLSearchParams(window.location.search);
+            fromStoryCreation = urlParams.get('from') === 'story_creation';
+            
+            // 检查来源页面
+            const referrer = document.referrer;
+            if (referrer && (
+                referrer.includes('story_themes.html') || 
+                referrer.includes('story_generation.html') ||
+                fromStoryCreation
+            )) {
+                fromStoryCreation = true;
+            }
+            
+            // 修改关闭按钮行为
+            const closeButton = document.querySelector('.close-button');
+            if (closeButton) {
+                closeButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    if (fromStoryCreation) {
+                        // 如果是从故事创建页面来的，返回故事主题选择页面
+                        window.location.href = 'story_themes.html';
+                    } else {
+                        // 否则返回上一页
+                        window.history.back();
+                    }
+                });
+            }
+            
+            // 初始化会员卡选择
             const cards = document.querySelectorAll('.membership-card');
             cards.forEach(card => {
                 card.addEventListener('click', () => {
@@ -304,7 +338,42 @@
                     card.classList.add('active');
                 });
             });
+            
+            // 设置订阅按钮行为
+            const subscribeButton = document.querySelector('.subscribe-button');
+            if (subscribeButton) {
+                subscribeButton.addEventListener('click', function() {
+                    // 处理订阅成功
+                    handleSubscriptionSuccess();
+                });
+            }
         });
+        
+        // 处理订阅成功
+        function handleSubscriptionSuccess() {
+            // 这里实际上应该调用iOS原生支付API
+            // 只是模拟成功支付的效果
+            
+            // 添加故事卡
+            if (typeof addStoryCredits === 'function') {
+                // 年度会员添加90张故事卡
+                addStoryCredits(90);
+            }
+            
+            // 显示成功提示
+            showToast('恭喜您成为喵星会员！已添加90张故事卡');
+            
+            // 延迟返回
+            setTimeout(() => {
+                if (fromStoryCreation) {
+                    // 如果是从故事创建页面来的，返回故事主题选择页面
+                    window.location.href = 'story_themes.html';
+                } else {
+                    // 否则返回上一页
+                    window.history.back();
+                }
+            }, 2000);
+        }
     </script>
 </body>
 </html> 

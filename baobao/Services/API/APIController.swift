@@ -19,7 +19,7 @@ class APIController: NSObject {
     
     // 服务
     private let storyService = StoryService.shared
-    private let speechService = SpeechService.shared
+    private let speechService: SpeechServiceProtocol = SpeechService.shared
     private let dataService = DataService.shared
     
     // 私有初始化方法
@@ -245,7 +245,7 @@ extension APIController: WKScriptMessageHandler {
         }
         
         // 合成语音
-        speechService.synthesizeSpeech(text: text, voiceType: voiceType) { [weak self] result in
+        speechService.synthesizeSpeech(text: text, voiceType: voiceType) { [weak self] (result: Result<URL, Error>) in
             guard let self = self else { return }
             
             switch result {
@@ -272,15 +272,14 @@ extension APIController: WKScriptMessageHandler {
         }
         
         // 播放音频
-        speechService.playAudio(from: audioURL) { [weak self] result in
+        speechService.playAudio(fileURL: audioURL) { [weak self] (success: Bool) in
             guard let self = self else { return }
             
-            switch result {
-            case .success:
+            if success {
                 self.sendResponse(to: webView, callbackID: callbackID, data: ["success": true])
-            case .failure(let error):
-                let nsError = error as NSError
-                self.sendResponse(to: webView, callbackID: callbackID, data: nil, error: nsError)
+            } else {
+                let error = NSError(domain: "com.baobao.speech", code: -1, userInfo: [NSLocalizedDescriptionKey: "播放音频失败"])
+                self.sendResponse(to: webView, callbackID: callbackID, data: nil, error: error)
             }
         }
     }

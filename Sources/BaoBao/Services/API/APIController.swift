@@ -278,7 +278,7 @@ extension APIController: WKScriptMessageHandler {
         }
         
         // 播放音频
-        speechService.playAudio(from: audioURL) { [weak self] success in
+        speechService.playAudio(fileURL: audioURL) { [weak self] success in
             guard let self = self else { return }
             
             if success {

@@ -1,183 +1,367 @@
-# 宝宝故事 (BaoBao Story)
+# 宝宝故事应用
 
-一款专为儿童设计的智能故事讲述应用，让每个宝宝都能成为故事的主角。
+宝宝故事应用是一款专为儿童设计的故事生成和讲述应用，使用DeepSeek AI生成个性化故事，并通过Azure语音服务将故事转换为语音。
 
-## 产品概述
+## 功能特点
 
-"宝宝故事"是一款专为家长和宝宝设计的iOS应用，它能根据选择的题材自动生成个性化童话故事，并通过AI语音进行生动的讲述。应用特别之处在于可以将宝宝设定为故事的主人公，让故事更有吸引力和教育意义。
+- **个性化故事生成**：根据孩子的名字、故事主题和长度生成定制故事
+- **多种语音选择**：提供多种语音角色，包括小明哥哥、小红姐姐、萍萍阿姨、老王爷爷和机器人
+- **离线模式支持**：预下载故事和语音，在无网络环境下也能使用
+- **智能缓存管理**：自动管理缓存大小和过期时间，优化存储空间
+- **网络状态感知**：根据网络状态自动调整应用行为，确保最佳用户体验
 
-## 核心功能
+## 最新优化
 
-### 1. AI故事生成
-- 提供多种故事题材供用户选择（如冒险、童话、动物世界等）
-- 基于DeepSeek-v2 API实时生成原创、有教育意义的儿童故事
-- 故事内容根据宝宝年龄自动调整难度和长度
-- 支持多种故事题材：冒险类、教育类、睡前故事类、节日与季节类
+我们对应用进行了全面优化，主要包括以下方面：
 
-### 2. 个性化定制
-- 允许用户创建宝宝档案（姓名、年龄、性别、兴趣爱好等）
-- 将宝宝设为故事主角，融入宝宝的特点和兴趣
-- 支持保存宝宝喜欢的故事，方便重复收听
-- 支持管理多个宝宝档案，为每个宝宝创建个性化故事
+1. **统一配置管理**：
+   - 创建了`ConfigurationManager`类，统一管理所有配置项
+   - 支持从多个位置加载配置，提高灵活性
+   - 添加了丰富的配置选项，支持自定义应用行为
 
-### 3. AI语音讲述
-- 默认使用Azure的`zh-CN-XiaoxiaoNeural`语音服务
-- 提供多种预设人声（如温柔女声、活泼童声等）
-- 支持用户上传录音样本（1分钟），训练定制化语音
-- 智能配音技术，使故事讲述更加生动有趣
-- 支持语速调整和背景音乐选择
+2. **增强的缓存系统**：
+   - 实现了`CacheManager`类，提供统一的缓存接口
+   - 支持多种缓存类型（故事、语音、图像）
+   - 自动管理缓存大小和过期时间
+   - 提供高效的缓存查询和存储方法
 
-### 4. 故事管理与互动
-- 故事库功能，保存已生成的故事
-- 收藏与分类系统，便于整理喜爱的故事
-- 分享功能，支持分享故事文本或音频
-- 互动反馈系统，帮助算法学习宝宝偏好
+3. **网络状态管理**：
+   - 添加了`NetworkManager`类，实时监控网络状态
+   - 支持WiFi和蜂窝网络区分
+   - 提供离线模式控制接口
+   - 根据网络状态自动调整应用行为
 
-## 设计语言
+4. **服务层优化**：
+   - 重构了`StoryService`和`SpeechService`，支持离线模式
+   - 添加了重试机制和错误处理
+   - 实现了预生成和预合成功能
+   - 添加了本地TTS备选方案
 
-我们的应用采用专为儿童和家长设计的iOS风格设计语言，确保界面友好、易用且吸引人。详细设计指南见 [.cursor/rules/design_system.json](.cursor/rules/design_system.json)。
+5. **离线体验增强**：
+   - 创建了`OfflineManager`类，提供全面的离线体验管理
+   - 支持预下载常用故事和语音
+   - 提供离线内容管理和查询功能
+   - 实现了网络恢复自动处理
 
-### 设计原则
-- **简单易懂**：简洁的UI设计，让儿童和家长都能轻松使用
-- **视觉吸引**：明亮活泼的色彩系统，吸引儿童注意力
-- **一致性**：整个应用保持一致的视觉和交互体验
-- **可访问性**：支持VoiceOver、动态文本大小和各种辅助功能
+这些优化大大提升了应用的稳定性、性能和用户体验，特别是在网络不稳定或无网络环境下的使用体验。
 
-### 颜色系统
-- **主色调**：柔和的蓝色系（#A1C4FD, #667EEA）
-- **中性色**：干净的白色和渐变灰色
-- **语义色**：清晰的功能性颜色指示（成功、警告、错误、信息）
+## 系统架构
 
-### 组件库
-- **iOS风格**：遵循Apple设计指南的组件
-- **卡片组件**：故事和内容以圆角卡片形式呈现
-- **按钮**：明确的动作按钮，适合儿童触控
-- **输入控件**：简化的表单元素，减少输入复杂度
+应用采用模块化设计，主要包含以下服务组件：
 
-### 动画与过渡
-- **流畅过渡**：界面间平滑转换
-- **微互动**：为关键操作提供反馈的小动画
-- **加载状态**：友好的加载指示器
+### 配置管理
+
+`ConfigurationManager` 负责加载和管理应用配置，支持从多个位置加载配置文件：
+- 应用包内的配置文件
+- 文档目录中的配置文件
+- 应用支持目录中的配置文件
+- 开发环境中的项目根目录配置文件
+
+### 缓存管理
+
+`CacheManager` 提供统一的缓存管理机制，支持以下功能：
+- 多种缓存类型（故事、语音、图像）
+- 自动清理过期缓存
+- 缓存大小限制和自动清理
+- 高效的缓存查询和存储
+
+### 网络管理
+
+`NetworkManager` 负责监控网络状态和管理离线模式：
+- 实时监控网络连接状态
+- 支持WiFi和蜂窝网络区分
+- 离线模式控制
+- 网络请求和同步策略管理
+
+### 故事服务
+
+`StoryService` 负责故事生成和管理：
+- 支持多种故事主题和长度
+- 智能缓存机制，避免重复生成
+- 离线模式支持，优先使用缓存内容
+- 重试机制和错误处理
+- 预生成功能，支持离线使用
+
+### 语音服务
+
+`SpeechService` 负责语音合成和管理：
+- 支持多种语音角色
+- Azure语音服务集成
+- 本地TTS备选方案
+- 智能缓存机制
+- 离线模式支持
+
+### 离线模式管理
+
+`OfflineManager` 提供全面的离线体验管理：
+- 预下载常用故事和语音
+- 离线内容管理和查询
+- 缓存统计和分析
+- 网络恢复自动处理
+
+## 离线模式支持
+
+应用提供全面的离线模式支持，主要包括以下功能：
+
+1. **手动离线模式**：用户可以手动启用离线模式，应用将不再尝试网络连接
+2. **自动离线检测**：应用自动检测网络状态，在网络不可用时切换到离线模式
+3. **预下载内容**：用户可以预先下载常用故事和语音，以便在离线时使用
+4. **智能缓存**：应用智能管理缓存内容，确保最常用的内容保留在缓存中
+5. **本地备选方案**：当网络不可用时，使用本地TTS作为备选方案
+
+### 预下载功能
+
+预下载功能允许用户提前下载内容以便离线使用：
+
+1. 用户可以选择要预下载的角色名称
+2. 应用会为每个角色和主题组合生成故事
+3. 然后为每个故事合成语音
+4. 预下载过程在后台进行，用户可以继续使用应用
+5. 预下载进度实时显示，用户可以随时取消
+
+### 离线内容管理
+
+应用提供离线内容管理功能：
+
+1. 查看已缓存的故事和语音
+2. 查看缓存大小和统计信息
+3. 清理缓存
+4. 优先显示可离线使用的内容
+
+## 配置选项
+
+应用提供多种配置选项，可以通过`Config.plist`文件进行设置：
+
+- `DEEPSEEK_API_KEY`：DeepSeek API密钥
+- `AZURE_SPEECH_KEY`：Azure语音服务密钥
+- `AZURE_SPEECH_REGION`：Azure语音服务区域
+- `DEFAULT_VOICE_TYPE`：默认语音类型
+- `CACHE_EXPIRY_DAYS`：缓存过期天数
+- `MAX_CACHE_SIZE_MB`：最大缓存大小（MB）
+- `USE_LOCAL_FALLBACK`：是否使用本地备选方案
+- `USE_LOCAL_TTS_BY_DEFAULT`：是否默认使用本地TTS
+- `AUTO_DOWNLOAD_NEW_STORIES`：是否自动下载新故事
+- `SYNC_ON_WIFI_ONLY`：是否仅在WiFi下同步
+
+## 开发指南
+
+### 环境要求
+
+- iOS 15.0+
+- Xcode 14.0+
+- Swift 5.7+
+
+### 依赖项
+
+- AVFoundation：用于语音合成
+- Network：用于网络状态监控
+- Combine：用于响应式编程
+
+### 配置文件
+
+在项目根目录创建`Config.plist`文件，包含以下配置项：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>DEEPSEEK_API_KEY</key>
+    <string>your_deepseek_api_key</string>
+    <key>AZURE_SPEECH_KEY</key>
+    <string>your_azure_speech_key</string>
+    <key>AZURE_SPEECH_REGION</key>
+    <string>eastasia</string>
+    <!-- 其他配置项 -->
+</dict>
+</plist>
+```
+
+## 使用示例
+
+### 生成故事
+
+```swift
+// 生成故事
+StoryService.shared.generateStory(
+    theme: .space,
+    characterName: "小明",
+    length: .medium
+) { result in
+    switch result {
+    case .success(let story):
+        print("故事生成成功：\(story)")
+    case .failure(let error):
+        print("故事生成失败：\(error.localizedDescription)")
+    }
+}
+```
+
+### 合成语音
+
+```swift
+// 合成语音
+SpeechService.shared.synthesizeSpeech(
+    text: storyText,
+    voiceType: .xiaoMing
+) { result in
+    switch result {
+    case .success(let audioURL):
+        print("语音合成成功：\(audioURL)")
+    case .failure(let error):
+        print("语音合成失败：\(error.localizedDescription)")
+    }
+}
+```
+
+### 预下载内容
+
+```swift
+// 预下载内容
+OfflineManager.shared.preDownloadCommonContent(
+    characterNames: ["小明", "小红"],
+    progressCallback: { progress in
+        print("预下载进度：\(progress * 100)%")
+    }
+) { success in
+    if success {
+        print("预下载完成")
+    } else {
+        print("预下载失败")
+    }
+}
+```
+
+### 启用离线模式
+
+```swift
+// 启用离线模式
+OfflineManager.shared.enableOfflineMode()
+
+// 禁用离线模式
+OfflineManager.shared.disableOfflineMode()
+
+// 切换离线模式
+OfflineManager.shared.toggleOfflineMode()
+```
+
+## 未来计划
+
+- 添加更多故事主题和语音角色
+- 支持故事插图生成
+- 实现用户自定义语音训练
+- 添加家长控制功能
+- 支持多语言故事生成
+
+## 项目概述
+
+宝宝故事应用旨在为3-8岁的儿童提供个性化的故事体验。家长可以输入孩子的名字、选择故事主题和长度，应用会自动生成一个以孩子为主角的有趣故事，并通过高质量的语音朗读出来。
+
+### 主要功能
+
+- **个性化故事生成**：以孩子为主角，生成适合儿童的有趣故事
+- **多种故事主题**：太空冒险、海洋探险、森林奇遇、恐龙世界、童话王国等
+- **语音朗读**：使用自然流畅的语音朗读故事
+- **多种语音选择**：女声、男声、儿童声、机器人声等
+- **离线模式**：保存故事和语音，支持离线阅读和收听
+- **故事收藏**：收藏喜欢的故事，随时重温
 
 ## 技术架构
 
-### 前端 (iOS)
-- 使用Swift和SwiftUI框架开发
-- 遵循Apple的Human Interface Guidelines设计直观友好的用户界面
-- 采用MVVM架构模式组织代码
-- 使用Combine框架处理数据流
-- 模块化设计便于维护与扩展
+### 前端
+
+- **SwiftUI**：构建现代化、响应式的用户界面
+- **Combine**：处理异步事件和数据流
+- **AVFoundation**：播放语音和音效
 
 ### 后端服务
 
-#### 故事生成服务
-- 强制使用DeepSeek-v2 API
-- 输入prompt必须包含安全指令：`[严禁暴力][适合5岁以下儿童][主角名称：${childName}]`
-- 实现指数退避重试机制处理API限流
-
-```javascript
-// DeepSeek故事生成接口
-POST https://api.deepseek.com/v1/story/generate
-
-// Headers
-{
-  "Authorization": "Bearer DEEPSEEK_KEY",
-  "X-Safety-Level": "strict" 
-}
-
-// 请求体（示例）
-{
-  "prompt": "生成以{豆豆}为主角的童话，题材：太空冒险，年龄：5岁，爱好：恐龙",
-  "max_tokens": 800,
-  "temperature": 0.7
-}
-
-// 错误处理
-429状态码时必须采用指数退避重试
-```
-
-#### 语音合成服务
-- 默认语音使用Azure的`zh-CN-XiaoxiaoNeural`
-- 自定义语音必须通过内容安全审核
-- 支持语音速率、音调和音量调整
+- **DeepSeek AI**：生成个性化儿童故事
+- **Azure语音服务**：将文本转换为自然流畅的语音
+- **本地TTS**：作为在线服务的备选方案
 
 ### 数据存储
-- 使用CoreData存储宝宝信息和故事库
-- 支持离线访问已生成故事
-- 使用CloudKit或Firebase进行云端同步
 
-### 数据流
-1. 用户输入（故事题材选择、宝宝信息）
-2. 应用构建安全prompt并发送至DeepSeek API
-3. DeepSeek生成个性化故事内容
-4. 应用将故事文本发送至Azure语音服务
-5. 播放合成的语音并显示故事文本
+- **Core Data/SwiftData**：存储用户信息、故事内容和设置
+- **文件系统**：缓存语音文件和故事内容
 
-## 代码规范
+## 项目结构
 
-本项目遵循严格的代码规范和最佳实践，确保代码质量、可维护性和性能。详细规范见 [.cursor/rules/code_standards.json](.cursor/rules/code_standards.json)。
+```
+baobao/
+├── baobao/                  # 主应用代码
+│   ├── App/                 # 应用入口和配置
+│   ├── Models/              # 数据模型
+│   ├── Views/               # 用户界面
+│   ├── ViewModels/          # 视图模型
+│   └── Services/            # 服务层
+│       ├── Story/           # 故事生成服务
+│       └── Speech/          # 语音合成服务
+├── Scripts/                 # 测试和工具脚本
+│   ├── test_api_integration.swift  # API集成测试
+│   └── integrate_api_results.swift # 结果整合脚本
+└── Resources/               # 资源文件
+    ├── Sounds/              # 音效文件
+    └── Images/              # 图像资源
+```
 
-### Swift代码规范
-- **命名约定**：使用清晰的驼峰命名法
-- **注释风格**：使用三斜线文档注释（///）
-- **代码结构**：使用MARK注释分隔代码段
-- **错误处理**：明确的错误类型定义和处理
-- **内存管理**：防止内存泄漏和循环引用
-- **并发处理**：使用Swift并发系统（async/await）
+## 开发进度
 
-### WebView规范
-- **桥接安全**：JS与原生代码安全通信
-- **性能监控**：资源加载和性能指标追踪
-- **错误处理**：全面捕获和处理JavaScript错误
-- **进程管理**：处理WebView进程终止情况
+- [x] API集成测试
+- [x] 故事生成服务实现
+- [x] 语音合成服务实现
+- [ ] 用户界面设计
+- [ ] 数据存储实现
+- [ ] 离线模式支持
+- [ ] 故事收藏功能
+- [ ] 应用测试和优化
 
-### CSS与HTML规范
-- **BEM命名**：遵循BEM方法论命名CSS类
-- **响应式**：移动优先的响应式设计
-- **语义化**：使用语义化HTML标签
-- **组件化**：按功能模块组织CSS
+## 安装和运行
 
-### 可访问性标准
-本项目严格遵循可访问性标准，详见 [.cursor/rules/accessibility_guidelines.json](.cursor/rules/accessibility_guidelines.json)。
-- **视觉可访问性**：高对比度和可调整文本大小
-- **屏幕阅读器支持**：完整的VoiceOver支持
-- **触控目标**：充分大的触控区域（最小44×44点）
-- **儿童友好**：简化导航和直观操作
+### 环境要求
 
-## 安全与隐私
-- 所有宝宝信息严格保密，仅用于故事生成
-- 多层内容过滤确保故事内容适合儿童
-- 符合儿童应用相关法规和标准
-- 提供家长控制功能，确保内容适合年龄
+- macOS 13.0+
+- Xcode 15.0+
+- iOS 17.0+
 
-## 开发路线图
+### 配置
 
-### 第一阶段：基础架构（2周）
-- 项目初始化与配置
-- 核心数据模型设计
-- 基础UI框架
+1. 克隆仓库
+2. 在项目根目录创建`Config.plist`文件，包含以下内容：
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+   <plist version="1.0">
+   <dict>
+       <key>DEEPSEEK_API_KEY</key>
+       <string>your_deepseek_api_key</string>
+       <key>AZURE_SPEECH_KEY</key>
+       <string>your_azure_speech_key</string>
+       <key>AZURE_SPEECH_REGION</key>
+       <string>your_azure_region</string>
+   </dict>
+   </plist>
+   ```
+3. 打开`baobao.xcodeproj`
+4. 构建并运行项目
 
-### 第二阶段：用户与宝宝信息模块（2周）
-- 用户登录与注册
-- 宝宝档案管理
+## API集成测试
 
-### 第三阶段：故事生成核心功能（3周）
-- DeepSeek API集成
-- 故事题材选择界面
-- 故事生成与预览
+我们提供了API集成测试脚本，用于验证DeepSeek和Azure服务的集成。详细信息请参阅[Scripts/README.md](Scripts/README.md)。
 
-### 第四阶段：语音合成功能（3周）
-- Azure语音集成
-- 自定义语音训练
-- 语音播放系统
+## 贡献指南
 
-### 第五阶段：优化与测试（2周）
-- 性能优化
-- 用户测试
-- 上架准备
+1. Fork项目
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建Pull Request
 
-## 后续迭代展望
-- 内容扩展（更多题材、节日特辑）
-- 高级个性化（AI生成插图）
-- 多平台支持
-- 社交功能（家庭共享） 
+## 许可证
+
+本项目采用MIT许可证 - 详见[LICENSE](LICENSE)文件
+
+## 联系方式
+
+- 项目维护者：宝宝故事团队
+- 邮箱：support@baobao.com 

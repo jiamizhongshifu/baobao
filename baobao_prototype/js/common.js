@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initPlayerControls();
     replaceCatIcons();
     
+    // 初始化故事创建次数
+    initStoryCredits();
+    
     // 添加toast样式
     const style = document.createElement('style');
     style.textContent = `
@@ -32,6 +35,87 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .toast-message.show {
             opacity: 1;
+        }
+        
+        /* 故事创建次数显示样式 */
+        .credits-display {
+            background-color: #FFF;
+            border-radius: 20px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .get-more-link {
+            color: #FFD966;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        
+        /* 会员提示弹窗样式 */
+        .membership-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .membership-prompt.show {
+            opacity: 1;
+        }
+        
+        .prompt-content {
+            background-color: #FFF;
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 320px;
+            animation: slideUp 0.3s;
+        }
+        
+        .prompt-icon {
+            font-size: 48px;
+            color: #FFD966;
+            margin-bottom: 20px;
+        }
+        
+        .prompt-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .prompt-message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        
+        .prompt-button {
+            background-color: #000;
+            color: #FFF;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
     `;
     document.head.appendChild(style);
@@ -972,4 +1056,248 @@ window.truncateText = truncateText;
 window.debounce = debounce;
 window.throttle = throttle;
 window.generateId = generateId;
-window.getDeviceInfo = getDeviceInfo; 
+window.getDeviceInfo = getDeviceInfo;
+
+/**
+ * 故事创建次数管理功能
+ */
+
+// 初始化故事创建次数（新用户默认3次）
+function initStoryCredits() {
+    if (localStorage.getItem('storyCredits') === null) {
+        localStorage.setItem('storyCredits', '3');
+        console.log('初始化故事创建次数：3次');
+    }
+}
+
+// 获取剩余故事创建次数
+function getRemainingStoryCredits() {
+    initStoryCredits();
+    return parseInt(localStorage.getItem('storyCredits') || '0');
+}
+
+// 消耗一次故事创建次数
+function consumeStoryCredit() {
+    const remaining = getRemainingStoryCredits();
+    if (remaining > 0) {
+        localStorage.setItem('storyCredits', (remaining - 1).toString());
+        console.log(`消耗1次故事创建次数，剩余${remaining - 1}次`);
+        return true;
+    }
+    console.log('故事创建次数已用完');
+    return false;
+}
+
+// 增加故事创建次数（用于恢复或会员特权）
+function addStoryCredits(amount) {
+    const remaining = getRemainingStoryCredits();
+    const newAmount = remaining + amount;
+    localStorage.setItem('storyCredits', newAmount.toString());
+    console.log(`增加${amount}次故事创建次数，当前共有${newAmount}次`);
+    return newAmount;
+}
+
+// 重置故事创建次数（用于测试）
+function resetStoryCredits(amount = 3) {
+    localStorage.setItem('storyCredits', amount.toString());
+    console.log(`重置故事创建次数为${amount}次`);
+    return amount;
+}
+
+// 展示剩余次数在界面上
+function displayRemainingCredits(elementId) {
+    const remaining = getRemainingStoryCredits();
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = remaining.toString();
+    }
+}
+
+// 检查是否有足够的故事创建次数
+function hasEnoughCredits() {
+    return getRemainingStoryCredits() > 0;
+}
+
+/**
+ * 显示会员提示，当用户的故事卡用完时引导用户升级为会员
+ */
+function showMembershipPrompt() {
+    // 创建蒙层
+    const overlay = document.createElement('div');
+    overlay.className = 'membership-prompt-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.zIndex = '9999';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.padding = '20px';
+    overlay.style.animation = 'fadeIn 0.3s ease-in-out';
+    
+    // 创建内容容器
+    const promptContainer = document.createElement('div');
+    promptContainer.className = 'membership-prompt-container';
+    promptContainer.style.backgroundColor = '#fff';
+    promptContainer.style.borderRadius = '20px';
+    promptContainer.style.padding = '30px';
+    promptContainer.style.maxWidth = '90%';
+    promptContainer.style.width = '350px';
+    promptContainer.style.textAlign = 'center';
+    promptContainer.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.2)';
+    promptContainer.style.animation = 'scaleIn 0.3s ease-in-out';
+    
+    // 创建图标
+    const icon = document.createElement('div');
+    icon.className = 'membership-prompt-icon';
+    icon.innerHTML = '<i class="fas fa-crown" style="font-size: 48px; color: #FFD700;"></i>';
+    icon.style.marginBottom = '20px';
+    
+    // 创建标题
+    const title = document.createElement('div');
+    title.className = 'membership-prompt-title';
+    title.textContent = '故事卡已用完';
+    title.style.fontSize = '24px';
+    title.style.fontWeight = 'bold';
+    title.style.marginBottom = '15px';
+    title.style.color = '#333';
+    
+    // 创建消息
+    const message = document.createElement('div');
+    message.className = 'membership-prompt-message';
+    message.textContent = '成为喵星会员，即可获得90张故事卡，畅享无限创作乐趣！';
+    message.style.fontSize = '16px';
+    message.style.marginBottom = '25px';
+    message.style.color = '#666';
+    message.style.lineHeight = '1.5';
+    
+    // 创建按钮容器
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'membership-prompt-buttons';
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.flexDirection = 'column';
+    buttonContainer.style.gap = '15px';
+    
+    // 创建会员按钮
+    const membershipButton = document.createElement('button');
+    membershipButton.className = 'membership-prompt-button primary';
+    membershipButton.textContent = '立即升级为会员';
+    membershipButton.style.backgroundColor = '#FF6A66';
+    membershipButton.style.color = '#fff';
+    membershipButton.style.border = 'none';
+    membershipButton.style.borderRadius = '30px';
+    membershipButton.style.padding = '12px 20px';
+    membershipButton.style.fontSize = '16px';
+    membershipButton.style.fontWeight = 'bold';
+    membershipButton.style.cursor = 'pointer';
+    membershipButton.style.transition = 'all 0.2s ease-in-out';
+    
+    // 创建取消按钮
+    const cancelButton = document.createElement('button');
+    cancelButton.className = 'membership-prompt-button secondary';
+    cancelButton.textContent = '以后再说';
+    cancelButton.style.backgroundColor = 'transparent';
+    cancelButton.style.color = '#666';
+    cancelButton.style.border = 'none';
+    cancelButton.style.padding = '10px';
+    cancelButton.style.fontSize = '14px';
+    cancelButton.style.cursor = 'pointer';
+    cancelButton.style.transition = 'all 0.2s ease-in-out';
+    
+    // 添加点击事件
+    membershipButton.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+        // 跳转到会员页面
+        window.location.href = 'membership.html?from=story_creation';
+    });
+    
+    cancelButton.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+    });
+    
+    // 组装DOM
+    buttonContainer.appendChild(membershipButton);
+    buttonContainer.appendChild(cancelButton);
+    
+    promptContainer.appendChild(icon);
+    promptContainer.appendChild(title);
+    promptContainer.appendChild(message);
+    promptContainer.appendChild(buttonContainer);
+    
+    overlay.appendChild(promptContainer);
+    
+    // 添加到body
+    document.body.appendChild(overlay);
+    
+    // 添加动画样式
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .membership-prompt-button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 106, 102, 0.3);
+        }
+        .membership-prompt-button.secondary:hover {
+            color: #333;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/**
+ * 获取当前选中的宝宝信息
+ */
+function getCurrentBaby() {
+    // 获取存储的宝宝数据
+    const babiesData = localStorage.getItem('babies');
+    if (!babiesData) return null;
+    
+    const babies = JSON.parse(babiesData);
+    if (babies.length === 0) return null;
+    
+    // 获取当前宝宝ID
+    const currentBabyId = localStorage.getItem('currentBabyId');
+    
+    // 如果有指定的当前宝宝ID，返回对应宝宝
+    if (currentBabyId) {
+        const currentBaby = babies.find(baby => baby.id === currentBabyId);
+        if (currentBaby) return currentBaby;
+    }
+    
+    // 默认返回第一个宝宝
+    return babies[0];
+}
+
+/**
+ * 在故事生成页面使用当前宝宝信息
+ */
+function prepareStoryGeneration() {
+    const baby = getCurrentBaby();
+    if (!baby) {
+        // 如果没有宝宝信息，跳转到宝宝添加页面
+        window.location.href = 'baby_management.html';
+        return;
+    }
+    
+    // 设置表单中的宝宝信息
+    const childNameElement = document.getElementById('childName');
+    const childAgeElement = document.getElementById('childAge');
+    const childInterestsElement = document.getElementById('childInterests');
+    
+    if (childNameElement) childNameElement.value = baby.name;
+    if (childAgeElement) childAgeElement.value = baby.age;
+    if (childInterestsElement && baby.interests) {
+        childInterestsElement.value = baby.interests.join(', ');
+    }
+} 

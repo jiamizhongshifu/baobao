@@ -36,5 +36,21 @@
     <true/>
     <key>USE_LOCAL_FALLBACK</key>
     <true/>
+    <key>USE_LOCAL_TTS_BY_DEFAULT</key>
+    <true/>
+    <key>STORY_GENERATION_ENDPOINT</key>
+    <string>https://api.deepseek.com/v1/chat/completions</string>
+    <key>SPEECH_SYNTHESIS_ENDPOINT</key>
+    <string>https://eastasia.tts.speech.microsoft.com/cognitiveservices/v1</string>
+    <key>DEFAULT_VOICE</key>
+    <string>zh-CN-XiaoxiaoNeural</string>
+    <key>MAX_CACHE_SIZE_MB</key>
+    <integer>100</integer>
+    <key>MAX_CACHE_AGE_DAYS</key>
+    <integer>7</integer>
+    <key>RETRY_COUNT</key>
+    <integer>3</integer>
+    <key>RETRY_DELAY_BASE_SECONDS</key>
+    <real>1.0</real>
 </dict>
 </plist> 

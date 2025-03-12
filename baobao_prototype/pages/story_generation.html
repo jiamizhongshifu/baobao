@@ -358,6 +358,19 @@
     <script src="../js/common.js"></script>
     <script src="../js/api.js"></script>
     <script>
+        // 初始化时检查是否有足够的故事创建次数
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否有足够的故事创建次数
+            if (typeof hasEnoughCredits === 'function' && !hasEnoughCredits()) {
+                // 显示提示并返回到主题选择页
+                showToast('您的故事卡已用完，请升级为会员继续使用');
+                setTimeout(() => {
+                    window.location.href = 'story_themes.html';
+                }, 2000);
+                return;
+            }
+        });
+        
         // 获取URL中的主题参数
         const urlParams = new URLSearchParams(window.location.search);
         const theme = urlParams.get('theme') || '魔法世界';
@@ -419,6 +432,20 @@
         
         // 生成故事按钮
         document.getElementById('generateButton').addEventListener('click', async () => {
+            // 再次检查是否有足够的故事创建次数
+            if (typeof hasEnoughCredits === 'function' && !hasEnoughCredits()) {
+                // 显示会员提示
+                if (typeof showMembershipPrompt === 'function') {
+                    showMembershipPrompt();
+                } else {
+                    showToast('您的故事卡已用完，请升级为会员继续使用');
+                    setTimeout(() => {
+                        window.location.href = 'story_themes.html';
+                    }, 2000);
+                }
+                return;
+            }
+            
             const selectedLength = document.querySelector('#lengthOptions .option-card.selected').getAttribute('data-length');
             const selectedVoice = document.querySelector('#voiceOptions .option-card.selected').getAttribute('data-voice');
             
@@ -426,17 +453,27 @@
             document.getElementById('loadingContainer').style.display = 'flex';
             
             try {
-                // 获取宝宝信息（这里假设已经有宝宝信息）
-                const childrenResult = await api.getChildren();
+                // 获取宝宝信息
+                let child;
                 
-                if (!childrenResult.children || childrenResult.children.length === 0) {
-                    // 如果没有宝宝信息，跳转到宝宝档案页面
-                    window.location.href = 'profile.html?redirect=story_themes.html';
-                    return;
+                // 尝试从common.js获取当前宝宝信息
+                if (typeof getCurrentBaby === 'function') {
+                    child = getCurrentBaby();
                 }
                 
-                // 使用第一个宝宝信息
-                const child = childrenResult.children[0];
+                // 如果没有从common.js获取到，则调用API
+                if (!child) {
+                    const childrenResult = await api.getChildren();
+                    
+                    if (!childrenResult.children || childrenResult.children.length === 0) {
+                        // 如果没有宝宝信息，跳转到宝宝档案页面
+                        window.location.href = 'baby_management.html?redirect=story_themes.html';
+                        return;
+                    }
+                    
+                    // 使用第一个宝宝信息
+                    child = childrenResult.children[0];
+                }
                 
                 // 生成故事
                 const story = await api.generateStory(
@@ -455,6 +492,11 @@
                 
                 // 保存故事
                 await api.saveStory(story);
+                
+                // 消耗一次故事创建次数
+                if (typeof consumeStoryCredit === 'function') {
+                    consumeStoryCredit();
+                }
                 
                 // 生成完成后跳转到首页
                 window.location.href = 'home.html';

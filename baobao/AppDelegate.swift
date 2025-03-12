@@ -114,7 +114,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let _ = StoryService.shared
         
         // 初始化语音服务
-        let _ = SpeechService.shared
+        let _: SpeechServiceProtocol = SpeechService.shared
         
         // 初始化API控制器
         let _ = APIController.shared
