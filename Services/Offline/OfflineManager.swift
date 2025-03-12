@@ -29,15 +29,6 @@ class OfflineManager {
     /// 语音服务
     private let speechService = SpeechService.shared
     
-    /// 设置仓库
-    private let settingsRepository = SettingsRepository.shared
-    
-    /// 孩子仓库
-    private let childRepository = ChildRepository.shared
-    
-    /// 故事仓库
-    private let storyRepository = StoryRepository.shared
-    
     /// 预下载队列
     private let preDownloadQueue = DispatchQueue(label: "com.baobao.offline.predownload", qos: .utility)
     
@@ -60,18 +51,9 @@ class OfflineManager {
     
     private init() {
         // 监听网络状态变化
-        networkManager.networkStatusPublisher
+        networkManager.statusPublisher
             .sink { [weak self] status in
-                self?.logger.info("网络状态变化: \(status)")
                 self?.handleNetworkStatusChange(status)
-            }
-            .store(in: &cancellables)
-        
-        // 监听设置变更
-        settingsRepository.settingsChangesPublisher
-            .sink { [weak self] settings in
-                self?.logger.info("应用设置变更: offlineModeEnabled=\(settings.offlineModeEnabled)")
-                self?.handleSettingsChange(settings)
             }
             .store(in: &cancellables)
     }
@@ -80,62 +62,32 @@ class OfflineManager {
     
     /// 启用离线模式
     func enableOfflineMode() {
-        settingsRepository.setOfflineMode(enabled: true)
-        networkManager.setOfflineMode(enabled: true)
-        logger.info("离线模式已启用")
+        networkManager.enableOfflineMode()
     }
     
     /// 禁用离线模式
     func disableOfflineMode() {
-        settingsRepository.setOfflineMode(enabled: false)
-        networkManager.setOfflineMode(enabled: false)
-        logger.info("离线模式已禁用")
+        networkManager.disableOfflineMode()
     }
     
     /// 切换离线模式
     func toggleOfflineMode() {
-        let settings = settingsRepository.getAppSettings()
-        let newValue = !settings.offlineModeEnabled
-        settingsRepository.setOfflineMode(enabled: newValue)
-        networkManager.setOfflineMode(enabled: newValue)
-        logger.info("离线模式已切换为: \(newValue ? "启用" : "禁用")")
+        networkManager.toggleOfflineMode()
     }
     
     /// 是否处于离线模式
-    var isOfflineModeEnabled: Bool {
-        return settingsRepository.getAppSettings().offlineModeEnabled
+    var isOfflineMode: Bool {
+        return networkManager.isOfflineMode
     }
     
-    /// 设置仅在WiFi下同步
-    func setSyncOnWifiOnly(enabled: Bool) {
-        settingsRepository.setSyncOnWifiOnly(enabled: enabled)
-        logger.info("仅在WiFi下同步已设置为: \(enabled ? "启用" : "禁用")")
-    }
-    
-    /// 是否仅在WiFi下同步
-    var isSyncOnWifiOnly: Bool {
-        return settingsRepository.getAppSettings().syncOnWifiOnly
-    }
-    
-    /// 设置自动下载新故事
-    func setAutoDownloadNewStories(enabled: Bool) {
-        settingsRepository.setAutoDownloadNewStories(enabled: enabled)
-        logger.info("自动下载新故事已设置为: \(enabled ? "启用" : "禁用")")
-    }
-    
-    /// 是否自动下载新故事
-    var isAutoDownloadNewStories: Bool {
-        return settingsRepository.getAppSettings().autoDownloadNewStories
-    }
-    
-    /// 预下载常用内容
+    /// 预下载常用故事和语音
     /// - Parameters:
-    ///   - characterNames: 角色名称数组
+    ///   - characterNames: 角色名称列表
     ///   - progressCallback: 进度回调
     ///   - completion: 完成回调
-    func preDownloadCommonContent(characterNames: [String], progressCallback: @escaping (Double) -> Void, completion: @escaping (Bool) -> Void) {
+    func preDownloadCommonContent(characterNames: [String], progressCallback: ((Double) -> Void)? = nil, completion: @escaping (Bool) -> Void) {
         // 检查是否已经在预下载
-        guard !isPreDownloading else {
+        if isPreDownloading {
             logger.warning("已有预下载任务正在进行")
             completion(false)
             return
@@ -148,140 +100,219 @@ class OfflineManager {
             return
         }
         
-        // 检查是否仅在WiFi下同步
-        if settingsRepository.getAppSettings().syncOnWifiOnly && !networkManager.isWifiConnected {
-            logger.warning("无法预下载：设置为仅在WiFi下同步，但当前不是WiFi连接")
-            completion(false)
-            return
-        }
-        
         // 更新状态
         isPreDownloading = true
         preDownloadProgress = 0
-        progressCallback(0)
         
-        // 在后台队列中执行预下载
+        // 在后台队列执行预下载
         preDownloadQueue.async { [weak self] in
             guard let self = self else { return }
             
-            // 获取所有主题和长度组合
-            let themes = StoryTheme.allCases
-            let lengths = [StoryLength.short] // 只预下载短篇故事
-            let voiceTypes = [VoiceType.pingPing] // 只预下载萍萍阿姨的声音
+            // 准备预下载项
+            var downloadItems: [(theme: StoryTheme, character: String, length: StoryLength, voice: VoiceType)] = []
             
-            // 计算总任务数
-            let totalTasks = characterNames.count * themes.count * lengths.count * 2 // 每个组合需要生成故事和语音，所以乘以2
-            var completedTasks = 0
-            
-            // 预下载每个组合
-            var success = true
-            
-            for characterName in characterNames {
-                for theme in themes {
-                    for length in lengths {
-                        // 检查是否取消了预下载
-                        if !self.isPreDownloading {
-                            self.logger.info("预下载已取消")
-                            DispatchQueue.main.async {
-                                self.isPreDownloading = false
-                                self.preDownloadProgress = 0
-                                completion(false)
-                            }
-                            return
-                        }
-                        
-                        // 预下载故事
-                        let semaphore = DispatchSemaphore(value: 0)
-                        var storyContent: String?
-                        
-                        self.storyService.generateStory(theme: theme, characterName: characterName, length: length) { result in
-                            switch result {
-                            case .success(let content):
-                                storyContent = content
-                                self.logger.info("故事预下载成功: \(characterName), \(theme.rawValue), \(length.rawValue)")
-                            case .failure(let error):
-                                self.logger.error("故事预下载失败: \(error.localizedDescription)")
-                                success = false
-                            }
-                            
-                            completedTasks += 1
-                            let progress = Double(completedTasks) / Double(totalTasks)
-                            
-                            DispatchQueue.main.async {
-                                self.preDownloadProgress = progress
-                                progressCallback(progress)
-                            }
-                            
-                            semaphore.signal()
-                        }
-                        
-                        semaphore.wait()
-                        
-                        // 如果故事生成成功，预下载语音
-                        if let content = storyContent {
-                            for voiceType in voiceTypes {
-                                let semaphore = DispatchSemaphore(value: 0)
-                                
-                                self.speechService.synthesizeSpeech(text: content, voiceType: voiceType) { result in
-                                    switch result {
-                                    case .success(_):
-                                        self.logger.info("语音预下载成功: \(characterName), \(theme.rawValue), \(voiceType.rawValue)")
-                                    case .failure(let error):
-                                        self.logger.error("语音预下载失败: \(error.localizedDescription)")
-                                        success = false
-                                    }
-                                    
-                                    completedTasks += 1
-                                    let progress = Double(completedTasks) / Double(totalTasks)
-                                    
-                                    DispatchQueue.main.async {
-                                        self.preDownloadProgress = progress
-                                        progressCallback(progress)
-                                    }
-                                    
-                                    semaphore.signal()
-                                }
-                                
-                                semaphore.wait()
-                            }
-                        }
+            // 为每个角色和主题组合生成下载项
+            for character in characterNames {
+                for theme in StoryTheme.allCases {
+                    // 默认使用中篇故事
+                    let length = StoryLength.medium
+                    
+                    // 为每个故事选择合适的语音类型
+                    let voice: VoiceType
+                    switch theme {
+                    case .space, .dinosaur:
+                        voice = .xiaoMing
+                    case .ocean, .fairy:
+                        voice = .xiaoHong
+                    case .forest:
+                        voice = .pingPing
                     }
+                    
+                    downloadItems.append((theme, character, length, voice))
                 }
             }
+            
+            // 添加一些额外的语音类型
+            if !downloadItems.isEmpty {
+                downloadItems.append((downloadItems[0].theme, downloadItems[0].character, downloadItems[0].length, .laoWang))
+                downloadItems.append((downloadItems[0].theme, downloadItems[0].character, downloadItems[0].length, .robot))
+            }
+            
+            // 总下载项数
+            let totalItems = downloadItems.count
+            var completedItems = 0
+            
+            // 如果没有下载项，直接完成
+            if totalItems == 0 {
+                DispatchQueue.main.async {
+                    self.isPreDownloading = false
+                    self.preDownloadProgress = 1.0
+                    progressCallback?(1.0)
+                    completion(true)
+                }
+                return
+            }
+            
+            // 创建一个组来跟踪所有下载任务
+            let downloadGroup = DispatchGroup()
+            
+            // 预下载每个项目
+            for (index, item) in downloadItems.enumerated() {
+                // 检查是否仍然可以执行网络请求
+                if !self.networkManager.canPerformNetworkRequest() {
+                    self.logger.warning("预下载中断：网络不可用")
+                    break
+                }
+                
+                // 进入组
+                downloadGroup.enter()
+                
+                // 预生成故事
+                self.storyService.preGenerateStory(theme: item.theme, characterName: item.character, length: item.length)
+                
+                // 延迟一小段时间，避免API请求过于频繁
+                Thread.sleep(forTimeInterval: 0.5)
+                
+                // 更新进度
+                completedItems += 1
+                let progress = Double(completedItems) / Double(totalItems * 2)
+                DispatchQueue.main.async {
+                    self.preDownloadProgress = progress
+                    progressCallback?(progress)
+                }
+                
+                // 离开组
+                downloadGroup.leave()
+                
+                // 每隔几个项目暂停一下，避免过度请求
+                if index % 3 == 2 {
+                    Thread.sleep(forTimeInterval: 2.0)
+                }
+            }
+            
+            // 等待所有故事生成完成
+            downloadGroup.wait()
+            
+            // 预下载语音（使用已缓存的故事）
+            for item in downloadItems {
+                // 检查是否仍然可以执行网络请求
+                if !self.networkManager.canPerformNetworkRequest() {
+                    self.logger.warning("预下载中断：网络不可用")
+                    break
+                }
+                
+                // 生成缓存键
+                let storyCacheKey = self.generateStoryCacheKey(theme: item.theme, characterName: item.character, length: item.length)
+                
+                // 检查故事是否已缓存
+                if let storyText = self.cacheManager.textFromCache(forKey: storyCacheKey, type: .story) {
+                    // 进入组
+                    downloadGroup.enter()
+                    
+                    // 预合成语音
+                    self.speechService.preSynthesizeSpeech(text: storyText, voiceType: item.voice)
+                    
+                    // 延迟一小段时间，避免API请求过于频繁
+                    Thread.sleep(forTimeInterval: 1.0)
+                    
+                    // 更新进度
+                    completedItems += 1
+                    let progress = Double(completedItems) / Double(totalItems * 2)
+                    DispatchQueue.main.async {
+                        self.preDownloadProgress = progress
+                        progressCallback?(progress)
+                    }
+                    
+                    // 离开组
+                    downloadGroup.leave()
+                }
+                
+                // 每隔几个项目暂停一下，避免过度请求
+                if completedItems % 3 == 2 {
+                    Thread.sleep(forTimeInterval: 2.0)
+                }
+            }
+            
+            // 等待所有语音合成完成
+            downloadGroup.wait()
             
             // 完成预下载
             DispatchQueue.main.async {
                 self.isPreDownloading = false
                 self.preDownloadProgress = 1.0
-                progressCallback(1.0)
-                self.logger.info("预下载完成，结果: \(success ? "成功" : "部分失败")")
-                completion(success)
+                progressCallback?(1.0)
+                completion(true)
+                
+                self.logger.info("预下载完成，共下载 \(completedItems) 个项目")
             }
         }
     }
     
     /// 取消预下载
     func cancelPreDownload() {
-        guard isPreDownloading else {
-            logger.warning("没有正在进行的预下载任务")
-            return
+        if isPreDownloading {
+            // 设置标志位，预下载循环会检查这个标志位
+            isPreDownloading = false
+            logger.info("预下载已取消")
         }
-        
-        isPreDownloading = false
-        logger.info("预下载已取消")
     }
     
-    /// 获取离线内容统计
-    func getOfflineContentStats() -> (storyCount: Int, speechCount: Int, totalSizeMB: Double) {
-        // 获取故事数量
-        let storyCount = storyRepository.getAllStories().count
+    /// 获取离线可用的故事列表
+    /// - Returns: 离线可用的故事列表
+    func getOfflineAvailableStories() -> [(theme: StoryTheme, character: String, length: StoryLength)] {
+        var availableStories: [(theme: StoryTheme, character: String, length: StoryLength)] = []
         
-        // 获取语音缓存数量和大小
-        let speechCount = cacheManager.getCacheCount(type: .speech)
-        let speechSize = cacheManager.cacheSize(type: .speech)
+        // 获取所有故事缓存文件
+        if let cacheDir = try? FileManager.default.contentsOfDirectory(at: cacheManager.cacheDirectories[.story]!, includingPropertiesForKeys: nil) {
+            for fileURL in cacheDir {
+                // 从文件名解析缓存键
+                let fileName = fileURL.lastPathComponent
+                if let cacheKey = fileName.split(separator: ".").first {
+                    // 尝试解析缓存键
+                    let components = String(cacheKey).split(separator: "_")
+                    if components.count >= 3 {
+                        // 尝试解析主题
+                        if let themeIndex = StoryTheme.allCases.firstIndex(where: { $0.rawValue.lowercased().replacingOccurrences(of: " ", with: "_") == components[0] }) {
+                            let theme = StoryTheme.allCases[themeIndex]
+                            
+                            // 解析角色名（可能包含多个下划线）
+                            var characterComponents: [String] = []
+                            for i in 1..<components.count-1 {
+                                characterComponents.append(String(components[i]))
+                            }
+                            let character = characterComponents.joined(separator: "_")
+                            
+                            // 尝试解析长度
+                            if let lengthIndex = StoryLength.allCases.firstIndex(where: { $0.rawValue.lowercased() == components.last }) {
+                                let length = StoryLength.allCases[lengthIndex]
+                                
+                                // 添加到可用故事列表
+                                availableStories.append((theme, character, length))
+                            }
+                        }
+                    }
+                }
+            }
+        }
         
-        // 计算总大小（MB）
-        let totalSizeMB = Double(speechSize) / (1024 * 1024)
+        return availableStories
+    }
+    
+    /// 获取离线缓存统计信息
+    /// - Returns: 缓存统计信息
+    func getOfflineCacheStats() -> (storyCount: Int, speechCount: Int, totalSizeMB: Double) {
+        let storyCount = getOfflineAvailableStories().count
+        
+        // 获取语音缓存文件数量
+        var speechCount = 0
+        if let cacheDir = try? FileManager.default.contentsOfDirectory(at: cacheManager.cacheDirectories[.speech]!, includingPropertiesForKeys: nil) {
+            speechCount = cacheDir.count
+        }
+        
+        // 计算总缓存大小
+        let storyCacheSize = cacheManager.cacheSize(type: .story)
+        let speechCacheSize = cacheManager.cacheSize(type: .speech)
+        let totalSizeMB = Double(storyCacheSize + speechCacheSize) / (1024 * 1024)
         
         return (storyCount, speechCount, totalSizeMB)
     }
@@ -290,16 +321,23 @@ class OfflineManager {
     
     /// 处理网络状态变化
     private func handleNetworkStatusChange(_ status: NetworkStatus) {
-        // 如果网络恢复连接，且不是手动设置的离线模式，则自动切换到在线模式
-        if status.isConnected && !settingsRepository.getAppSettings().offlineModeEnabled {
-            networkManager.setOfflineMode(enabled: false)
-            logger.info("网络已恢复，自动切换到在线模式")
+        // 如果网络恢复连接，可以在这里执行一些操作
+        if status == .connected && !networkManager.isOfflineMode {
+            logger.info("网络已恢复连接")
+            
+            // 如果配置了自动下载新故事，可以在这里触发下载
+            if configManager.autoDownloadNewStories {
+                logger.info("准备自动下载新故事")
+                // 这里可以实现自动下载逻辑
+            }
         }
     }
     
-    /// 处理设置变更
-    private func handleSettingsChange(_ settings: AppSettingsModel) {
-        // 同步离线模式设置到网络管理器
-        networkManager.setOfflineMode(enabled: settings.offlineModeEnabled)
+    /// 生成故事缓存键
+    private func generateStoryCacheKey(theme: StoryTheme, characterName: String, length: StoryLength) -> String {
+        let key = "\(theme.rawValue)_\(characterName)_\(length.rawValue)"
+        return key.replacingOccurrences(of: " ", with: "_")
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .lowercased()
     }
 } 

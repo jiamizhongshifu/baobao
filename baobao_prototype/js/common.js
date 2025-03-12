@@ -340,7 +340,7 @@ function initSidebar() {
         if (babyManagementItem) {
             babyManagementItem.addEventListener('click', (e) => {
                 e.preventDefault();
-                window.location.href = 'baby_management.html';
+                window.location.href = 'baby_management.html?from=sidebar';
                 sidebar.classList.remove('open');
                 overlay.classList.remove('open');
             });
@@ -361,7 +361,7 @@ function initSidebar() {
         const sidebarHeader = document.querySelector('.sidebar-header');
         if (sidebarHeader) {
             sidebarHeader.addEventListener('click', () => {
-                window.location.href = 'baby_management.html';
+                window.location.href = 'baby_management.html?from=sidebar';
                 sidebar.classList.remove('open');
                 overlay.classList.remove('open');
             });
@@ -1285,8 +1285,8 @@ function getCurrentBaby() {
 function prepareStoryGeneration() {
     const baby = getCurrentBaby();
     if (!baby) {
-        // 如果没有宝宝信息，跳转到宝宝添加页面
-        window.location.href = 'baby_management.html';
+        // 如果没有宝宝信息，跳转到宝宝添加页面，添加来源参数
+        window.location.href = 'baby_management.html?from=story_generation';
         return;
     }
     

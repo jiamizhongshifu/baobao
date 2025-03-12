@@ -42,9 +42,15 @@ function initDomReferences() {
 
 // 检查是否是首次使用
 function checkFirstTimeUser() {
+    // 检查是否是首次使用
     const isFirstTimeUser = !localStorage.getItem('hasAddedBaby');
     
-    if (isFirstTimeUser) {
+    // 检查是否是从登录页面跳转过来的（通过URL参数判断）
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromLogin = urlParams.get('from') === 'login';
+    
+    // 只有在首次使用且是从登录页面跳转过来时，才显示欢迎界面和自动打开添加表单
+    if (isFirstTimeUser && fromLogin) {
         // 隐藏返回按钮
         const backButton = document.querySelector('.back-button');
         if (backButton) {

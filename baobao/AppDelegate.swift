@@ -7,45 +7,6 @@
 
 import UIKit
 import os.log
-import Foundation
-
-// 简化版的AppSettingsModel类
-class AppSettingsModel {
-    var offlineModeEnabled: Bool = false
-}
-
-// 简化版的DataInitializer类
-class DataInitializer {
-    static let shared = DataInitializer()
-    
-    func initializeData(completion: @escaping (Bool) -> Void) {
-        // 简化实现，直接返回成功
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            print("数据初始化成功")
-            completion(true)
-        }
-    }
-}
-
-// 简化版的SettingsRepository类
-class SettingsRepository {
-    static let shared = SettingsRepository()
-    
-    func getAppSettings() -> AppSettingsModel {
-        // 简化实现，返回默认设置
-        return AppSettingsModel()
-    }
-}
-
-// 简化版的NetworkManager类
-class NetworkManager {
-    static let shared = NetworkManager()
-    
-    func setOfflineMode(enabled: Bool) {
-        // 简化实现
-        print("离线模式已\(enabled ? "启用" : "禁用")")
-    }
-}
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -57,9 +18,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // 初始化所有服务
         initializeServices()
-        
-        // 初始化应用数据
-        initializeAppData()
         
         // 设置未捕获异常处理
         setupUncaughtExceptionHandler()
@@ -163,26 +121,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         logger.info("所有服务已初始化完成")
     }
-    
-    // 初始化应用数据
-    private func initializeAppData() {
-        logger.info("开始初始化应用数据")
-        
-        // 初始化数据
-        DataInitializer.shared.initializeData { success in
-            if success {
-                self.logger.info("应用数据初始化成功")
-            } else {
-                self.logger.error("应用数据初始化失败")
-            }
-        }
-        
-        // 同步离线模式设置
-        let settings = SettingsRepository.shared.getAppSettings()
-        NetworkManager.shared.setOfflineMode(enabled: settings.offlineModeEnabled)
-        
-        logger.info("应用数据初始化完成")
-    }
 }
 
 // MARK: - UIApplication.State Extension
@@ -199,5 +137,4 @@ extension UIApplication.State {
             return "未知"
         }
     }
-} 
 } 

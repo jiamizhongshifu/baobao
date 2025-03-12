@@ -94,9 +94,9 @@ const auth = {
             const isFirstLogin = !localStorage.getItem('hasAddedBaby');
             
             if (isFirstLogin) {
-                // 首次登录，导航到宝宝管理页面
+                // 首次登录，导航到宝宝管理页面，并添加来源参数
                 Logger.info('首次登录，跳转到宝宝管理页面', 'AUTH');
-                window.location.href = 'baby_management.html';
+                window.location.href = 'baby_management.html?from=login';
             } else {
                 // 非首次登录，导航到主页
                 Logger.info('非首次登录，跳转到主页', 'AUTH');

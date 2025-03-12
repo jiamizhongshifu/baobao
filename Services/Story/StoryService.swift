@@ -102,14 +102,12 @@ enum StoryGenerationStatus {
     case failure(StoryServiceError)
 }
 
-/// 故事服务，负责生成和管理故事
+/// 故事服务
 class StoryService {
-    // MARK: - 单例
-    
-    /// 共享实例
-    static let shared = StoryService()
-    
     // MARK: - 属性
+    
+    /// 单例实例
+    static let shared = StoryService()
     
     /// 日志记录器
     private let logger = Logger(subsystem: "com.baobao.story", category: "StoryService")
@@ -123,16 +121,10 @@ class StoryService {
     /// 网络管理器
     private let networkManager = NetworkManager.shared
     
-    /// 故事仓库
-    private let storyRepository = StoryRepository.shared
-    
-    /// 孩子仓库
-    private let childRepository = ChildRepository.shared
-    
-    /// 故事生成状态
+    /// 当前生成状态
     @Published private(set) var generationStatus: StoryGenerationStatus = .idle
     
-    /// 故事生成状态发布者
+    /// 生成状态发布者
     var generationStatusPublisher: AnyPublisher<StoryGenerationStatus, Never> {
         return $generationStatus.eraseToAnyPublisher()
     }
@@ -144,7 +136,7 @@ class StoryService {
     
     private init() {
         // 监听网络状态变化
-        networkManager.networkStatusPublisher
+        networkManager.statusPublisher
             .sink { [weak self] status in
                 self?.logger.info("网络状态变化: \(status)")
             }
@@ -154,13 +146,6 @@ class StoryService {
         networkManager.offlineModePublisher
             .sink { [weak self] isOffline in
                 self?.logger.info("离线模式变化: \(isOffline ? "启用" : "禁用")")
-            }
-            .store(in: &cancellables)
-        
-        // 监听故事变更
-        storyRepository.storyChangesPublisher
-            .sink { [weak self] _ in
-                self?.logger.info("故事数据变更")
             }
             .store(in: &cancellables)
     }
@@ -189,26 +174,9 @@ class StoryService {
         // 生成缓存键
         let cacheKey = generateCacheKey(theme: theme, characterName: characterName, length: length)
         
-        // 检查SwiftData缓存
-        if !forceRefresh {
-            let stories = storyRepository.getStories(withCharacterName: characterName)
-                .filter { $0.theme == theme.rawValue }
-            
-            if let story = stories.first {
-                logger.info("从SwiftData中获取故事: \(story.id)")
-                generationStatus = .success(story.content)
-                completion(.success(story.content))
-                return
-            }
-        }
-        
-        // 检查文件缓存（如果不强制刷新）
+        // 检查缓存（如果不强制刷新）
         if !forceRefresh, let cachedStory = retrieveFromCache(cacheKey: cacheKey) {
-            logger.info("从文件缓存中获取故事: \(cacheKey)")
-            
-            // 保存到SwiftData
-            saveToSwiftData(title: "关于\(characterName)的\(theme.rawValue)", content: cachedStory, theme: theme.rawValue, characterName: characterName)
-            
+            logger.info("从缓存中获取故事: \(cacheKey)")
             generationStatus = .success(cachedStory)
             completion(.success(cachedStory))
             return
@@ -218,12 +186,11 @@ class StoryService {
         if !networkManager.canPerformNetworkRequest() {
             logger.warning("无法生成故事：当前处于离线模式或网络不可用")
             
-            // 在离线模式下，尝试从SwiftData获取任何相关故事
-            let stories = storyRepository.getStories(withCharacterName: characterName)
-            if let story = stories.first {
-                logger.info("离线模式：从SwiftData中获取相关故事: \(story.id)")
-                generationStatus = .success(story.content)
-                completion(.success(story.content))
+            // 在离线模式下，尝试从缓存获取（即使请求了强制刷新）
+            if let cachedStory = retrieveFromCache(cacheKey: cacheKey) {
+                logger.info("离线模式：从缓存中获取故事: \(cacheKey)")
+                generationStatus = .success(cachedStory)
+                completion(.success(cachedStory))
                 return
             }
             
@@ -234,21 +201,19 @@ class StoryService {
             return
         }
         
-        // 生成故事
-        generateStoryFromAPI(theme: theme, characterName: characterName, length: length) { [weak self] result in
+        // 构建提示词
+        let prompt = buildPrompt(theme: theme, characterName: characterName, length: length)
+        
+        // 使用重试机制生成故事
+        generateStoryWithRetry(prompt: prompt, maxRetries: configManager.maxStoryRetries) { [weak self] result in
             guard let self = self else { return }
             
             switch result {
-            case .success(let storyContent):
+            case .success(let story):
                 // 缓存故事
-                self.saveToCache(storyContent: storyContent, cacheKey: cacheKey)
-                
-                // 保存到SwiftData
-                self.saveToSwiftData(title: "关于\(characterName)的\(theme.rawValue)", content: storyContent, theme: theme.rawValue, characterName: characterName)
-                
-                self.generationStatus = .success(storyContent)
-                completion(.success(storyContent))
-                
+                self.saveToCache(story: story, cacheKey: cacheKey)
+                self.generationStatus = .success(story)
+                completion(.success(story))
             case .failure(let error):
                 self.generationStatus = .failure(error)
                 completion(.failure(error))
@@ -256,94 +221,91 @@ class StoryService {
         }
     }
     
-    /// 获取所有故事
-    func getAllStories() -> [Story] {
-        // 从SwiftData获取所有故事
-        let storyModels = storyRepository.getAllStories()
+    /// 预生成故事（用于预缓存）
+    /// - Parameters:
+    ///   - theme: 故事主题
+    ///   - characterName: 主角名字
+    ///   - length: 故事长度
+    func preGenerateStory(theme: StoryTheme, characterName: String, length: StoryLength) {
+        // 生成缓存键
+        let cacheKey = generateCacheKey(theme: theme, characterName: characterName, length: length)
         
-        // 转换为旧版Story模型
-        return storyModels.map { $0.toStory() }
-    }
-    
-    /// 获取收藏的故事
-    func getFavoriteStories() -> [Story] {
-        // 从SwiftData获取收藏的故事
-        let storyModels = storyRepository.getFavoriteStories()
+        // 检查缓存是否已存在
+        if retrieveFromCache(cacheKey: cacheKey) != nil {
+            logger.info("故事已缓存，跳过预生成: \(cacheKey)")
+            return
+        }
         
-        // 转换为旧版Story模型
-        return storyModels.map { $0.toStory() }
-    }
-    
-    /// 按主题获取故事
-    func getStories(withTheme theme: StoryTheme) -> [Story] {
-        // 从SwiftData获取指定主题的故事
-        let storyModels = storyRepository.getStories(withTheme: theme.rawValue)
+        // 检查网络状态
+        if !networkManager.canPerformNetworkRequest() {
+            logger.warning("无法预生成故事：当前处于离线模式或网络不可用")
+            return
+        }
         
-        // 转换为旧版Story模型
-        return storyModels.map { $0.toStory() }
-    }
-    
-    /// 按角色名获取故事
-    func getStories(withCharacterName name: String) -> [Story] {
-        // 从SwiftData获取指定角色的故事
-        let storyModels = storyRepository.getStories(withCharacterName: name)
+        // 构建提示词
+        let prompt = buildPrompt(theme: theme, characterName: characterName, length: length)
         
-        // 转换为旧版Story模型
-        return storyModels.map { $0.toStory() }
+        // 使用重试机制生成故事
+        generateStoryWithRetry(prompt: prompt, maxRetries: configManager.maxStoryRetries) { [weak self] result in
+            guard let self = self else { return }
+            
+            switch result {
+            case .success(let story):
+                // 缓存故事
+                self.saveToCache(story: story, cacheKey: cacheKey)
+                self.logger.info("故事预生成成功: \(cacheKey)")
+            case .failure(let error):
+                self.logger.error("故事预生成失败: \(error.localizedDescription)")
+            }
+        }
     }
     
-    /// 切换故事收藏状态
-    func toggleFavorite(storyId: String) -> Bool {
-        return storyRepository.toggleFavorite(storyId: storyId)
+    /// 清除故事缓存
+    func clearStoryCache() {
+        cacheManager.clearCache(type: .story)
+        logger.info("故事缓存已清除")
     }
     
-    /// 更新故事播放位置
-    func updatePlayPosition(storyId: String, position: TimeInterval) {
-        storyRepository.updatePlayPosition(storyId: storyId, position: position)
-    }
-    
-    /// 增加阅读次数
-    func incrementReadCount(storyId: String) {
-        storyRepository.incrementReadCount(storyId: storyId)
+    /// 获取故事缓存大小
+    /// - Returns: 缓存大小（字节）
+    func getStoryCacheSize() -> Int64 {
+        return cacheManager.cacheSize(type: .story)
     }
     
     // MARK: - 私有方法
     
+    /// 构建提示词
+    private func buildPrompt(theme: StoryTheme, characterName: String, length: StoryLength) -> String {
+        return """
+        请为5岁的孩子创作一个有关\(theme.rawValue)的故事，故事应该：
+        1. 主角是一个叫\(characterName)的小孩
+        2. 包含一个有趣的问题和解决方案
+        3. 长度在\(length.wordCount.lowerBound)-\(length.wordCount.upperBound)字之间
+        4. 使用简单的语言，适合5岁孩子理解
+        5. 包含一些有趣的声音效果
+        6. 有一个积极向上的结局
+        7. 故事开头请直接写上标题
+        
+        请直接给出故事内容，不要包含任何前言或说明。
+        """
+    }
+    
     /// 生成缓存键
     private func generateCacheKey(theme: StoryTheme, characterName: String, length: StoryLength) -> String {
-        return "story_\(theme.rawValue)_\(characterName)_\(length.rawValue)".replacingOccurrences(of: " ", with: "_")
+        let key = "\(theme.rawValue)_\(characterName)_\(length.rawValue)"
+        return key.replacingOccurrences(of: " ", with: "_")
+            .folding(options: .diacriticInsensitive, locale: .current)
+            .lowercased()
     }
     
     /// 从缓存中获取故事
     private func retrieveFromCache(cacheKey: String) -> String? {
-        return cacheManager.stringFromCache(forKey: cacheKey, type: .story)
+        return cacheManager.textFromCache(forKey: cacheKey, type: .story)
     }
     
     /// 保存故事到缓存
-    private func saveToCache(storyContent: String, cacheKey: String) {
-        cacheManager.saveToCache(string: storyContent, forKey: cacheKey, type: .story)
-    }
-    
-    /// 保存故事到SwiftData
-    private func saveToSwiftData(title: String, content: String, theme: String, characterName: String) {
-        // 创建故事模型
-        let storyModel = StoryModel(
-            title: title,
-            content: content,
-            theme: theme,
-            characterName: characterName
-        )
-        
-        // 尝试找到对应的孩子
-        let children = childRepository.searchChildren(byName: characterName)
-        if let child = children.first {
-            storyModel.child = child
-        }
-        
-        // 保存到数据库
-        storyRepository.saveStory(storyModel)
-        
-        logger.info("故事已保存到SwiftData: \(storyModel.id)")
+    private func saveToCache(story: String, cacheKey: String) {
+        _ = cacheManager.saveTextToCache(text: story, forKey: cacheKey, type: .story)
     }
     
     /// 使用重试机制生成故事
