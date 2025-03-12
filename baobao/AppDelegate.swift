@@ -8,12 +8,16 @@
 import UIKit
 import os.log
 
+@main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     // 创建专用的日志记录器
     private let logger = Logger(subsystem: "com.baobao.app", category: "lifecycle")
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         logger.info("🚀 应用启动开始")
+        
+        // 初始化所有服务
+        initializeServices()
         
         // 设置未捕获异常处理
         setupUncaughtExceptionHandler()
@@ -99,6 +103,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 - 调用栈: \(exception.callStackSymbols.joined(separator: "\n"))
                 """)
         }
+    }
+    
+    // 确保所有服务都被初始化
+    private func initializeServices() {
+        // 初始化数据服务
+        let _ = DataService.shared
+        
+        // 初始化故事服务
+        let _ = StoryService.shared
+        
+        // 初始化语音服务
+        let _ = SpeechService.shared
+        
+        // 初始化API控制器
+        let _ = APIController.shared
+        
+        logger.info("所有服务已初始化完成")
     }
 }
 

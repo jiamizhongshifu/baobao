@@ -250,6 +250,38 @@ function initSidebar() {
             sidebar.classList.remove('open');
             overlay.classList.remove('open');
         });
+        
+        // 为侧边栏中的宝宝管理项添加点击事件
+        const babyManagementItem = document.querySelector('.sidebar-item[href="baby_management.html"]');
+        if (babyManagementItem) {
+            babyManagementItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = 'baby_management.html';
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+        }
+        
+        // 为侧边栏中的用户资料项添加点击事件
+        const profileItem = document.querySelector('.sidebar-item[href="profile.html"]');
+        if (profileItem) {
+            profileItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = 'profile.html';
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+        }
+        
+        // 为侧边栏头部的宝宝名称添加点击事件
+        const sidebarHeader = document.querySelector('.sidebar-header');
+        if (sidebarHeader) {
+            sidebarHeader.addEventListener('click', () => {
+                window.location.href = 'baby_management.html';
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+        }
     }
 }
 
@@ -705,4 +737,239 @@ function log(message, level = 'info') {
     } catch (e) {
         console.warn(`无法发送日志到原生代码: ${e.message}`);
     }
-} 
+}
+
+/**
+ * 显示提示消息
+ * @param {string} message - 提示消息内容
+ * @param {number} duration - 显示时长（毫秒）
+ */
+function showToast(message, duration = 2000) {
+    // 检查是否已存在Toast元素
+    let toast = document.getElementById('commonToast');
+    
+    if (!toast) {
+        // 创建Toast元素
+        toast = document.createElement('div');
+        toast.id = 'commonToast';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '30px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        toast.style.color = 'white';
+        toast.style.padding = '12px 20px';
+        toast.style.borderRadius = '20px';
+        toast.style.fontSize = '14px';
+        toast.style.zIndex = '10000';
+        toast.style.transition = 'opacity 0.3s';
+        toast.style.opacity = '0';
+        
+        // 添加到页面
+        document.body.appendChild(toast);
+    }
+    
+    // 设置消息文本
+    toast.textContent = message;
+    
+    // 显示Toast
+    toast.style.opacity = '1';
+    
+    // 设置定时器，自动隐藏Toast
+    clearTimeout(toast.hideTimeout);
+    toast.hideTimeout = setTimeout(() => {
+        toast.style.opacity = '0';
+    }, duration);
+}
+
+/**
+ * 显示加载提示
+ * @param {string} message - 加载提示消息
+ */
+function showLoading(message = '加载中...') {
+    // 检查是否已存在加载提示元素
+    let loadingContainer = document.getElementById('commonLoadingContainer');
+    
+    if (!loadingContainer) {
+        // 创建加载提示元素
+        loadingContainer = document.createElement('div');
+        loadingContainer.id = 'commonLoadingContainer';
+        loadingContainer.style.position = 'fixed';
+        loadingContainer.style.top = '0';
+        loadingContainer.style.left = '0';
+        loadingContainer.style.width = '100%';
+        loadingContainer.style.height = '100%';
+        loadingContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+        loadingContainer.style.display = 'flex';
+        loadingContainer.style.flexDirection = 'column';
+        loadingContainer.style.alignItems = 'center';
+        loadingContainer.style.justifyContent = 'center';
+        loadingContainer.style.zIndex = '9999';
+        
+        // 创建加载动画
+        const loadingAnimation = document.createElement('div');
+        loadingAnimation.style.width = '40px';
+        loadingAnimation.style.height = '40px';
+        loadingAnimation.style.border = '4px solid #f3f3f3';
+        loadingAnimation.style.borderTop = '4px solid #3498db';
+        loadingAnimation.style.borderRadius = '50%';
+        loadingAnimation.style.animation = 'commonLoadingSpin 1s linear infinite';
+        
+        // 创建加载文本
+        const loadingText = document.createElement('div');
+        loadingText.id = 'commonLoadingText';
+        loadingText.style.marginTop = '20px';
+        loadingText.style.fontSize = '16px';
+        loadingText.style.color = '#333';
+        
+        // 添加动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes commonLoadingSpin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        
+        // 添加到页面
+        document.head.appendChild(style);
+        loadingContainer.appendChild(loadingAnimation);
+        loadingContainer.appendChild(loadingText);
+        document.body.appendChild(loadingContainer);
+    }
+    
+    // 设置加载文本
+    document.getElementById('commonLoadingText').textContent = message;
+    
+    // 显示加载提示
+    loadingContainer.style.display = 'flex';
+}
+
+/**
+ * 隐藏加载提示
+ */
+function hideLoading() {
+    const loadingContainer = document.getElementById('commonLoadingContainer');
+    if (loadingContainer) {
+        loadingContainer.style.display = 'none';
+    }
+}
+
+/**
+ * 格式化日期
+ * @param {Date|string} date - 日期对象或日期字符串
+ * @param {string} format - 格式化模板，如 'YYYY-MM-DD HH:mm:ss'
+ * @returns {string} 格式化后的日期字符串
+ */
+function formatDate(date, format = 'YYYY-MM-DD') {
+    if (!date) return '';
+    
+    const d = typeof date === 'string' ? new Date(date) : date;
+    
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    
+    return format
+        .replace('YYYY', year)
+        .replace('MM', month)
+        .replace('DD', day)
+        .replace('HH', hours)
+        .replace('mm', minutes)
+        .replace('ss', seconds);
+}
+
+/**
+ * 获取URL参数
+ * @param {string} name - 参数名
+ * @returns {string|null} 参数值，如果不存在则返回null
+ */
+function getUrlParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+/**
+ * 截断文本
+ * @param {string} text - 原始文本
+ * @param {number} maxLength - 最大长度
+ * @returns {string} 截断后的文本
+ */
+function truncateText(text, maxLength = 100) {
+    if (!text || text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+/**
+ * 防抖函数
+ * @param {Function} func - 要执行的函数
+ * @param {number} wait - 等待时间（毫秒）
+ * @returns {Function} 防抖处理后的函数
+ */
+function debounce(func, wait = 300) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+/**
+ * 节流函数
+ * @param {Function} func - 要执行的函数
+ * @param {number} limit - 限制时间（毫秒）
+ * @returns {Function} 节流处理后的函数
+ */
+function throttle(func, limit = 300) {
+    let inThrottle;
+    return function(...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+/**
+ * 随机生成ID
+ * @returns {string} 随机ID
+ */
+function generateId() {
+    return 'id_' + Math.random().toString(36).substr(2, 9);
+}
+
+/**
+ * 检查设备类型
+ * @returns {Object} 设备类型信息
+ */
+function getDeviceInfo() {
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+    const isMobile = isIOS || isAndroid || /Mobile/.test(ua);
+    const isTablet = /Tablet|iPad/.test(ua) || (isAndroid && !/Mobile/.test(ua));
+    
+    return {
+        isIOS,
+        isAndroid,
+        isMobile,
+        isTablet,
+        isDesktop: !isMobile && !isTablet
+    };
+}
+
+// 导出通用函数
+window.showToast = showToast;
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
+window.formatDate = formatDate;
+window.getUrlParam = getUrlParam;
+window.truncateText = truncateText;
+window.debounce = debounce;
+window.throttle = throttle;
+window.generateId = generateId;
+window.getDeviceInfo = getDeviceInfo; 

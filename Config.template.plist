@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>DEEPSEEK_API_KEY</key>
-    <string>sk-5cc05eb59de1476792e079d19130c274</string>
+    <string>YOUR_DEEPSEEK_API_KEY_HERE</string>
     <key>AZURE_SPEECH_KEY</key>
-    <string>2AOAcpeJHPbfn3R7t07RWyCgW9xd3ABfoX9coyFIfuGd7TglpH3qJQQJ99BCAC3pKaRXJ3w3AAAYACOGYJBT</string>
+    <string>YOUR_AZURE_SPEECH_KEY_HERE</string>
     <key>AZURE_SPEECH_REGION</key>
     <string>eastasia</string>
     <key>AZURE_CUSTOM_VOICE_ID</key>

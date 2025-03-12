@@ -319,22 +319,22 @@
         <h1 class="welcome-title fade-in" style="animation-delay: 0.2s;">宝宝故事</h1>
         <p class="welcome-subtitle fade-in" style="animation-delay: 0.4s;">为您的宝宝创造专属故事</p>
         
-        <button class="create-story-button fade-in" style="animation-delay: 0.6s;" onclick="window.location.href='story_themes.html'">
+        <button class="create-story-button fade-in" style="animation-delay: 0.6s;" id="createStoryButton">
             <i class="fas fa-magic"></i>创建第一个故事
         </button>
         
         <div class="login-options fade-in" style="animation-delay: 0.8s;">
             <p class="login-text">已有账号？快速登录：</p>
             <div class="login-buttons">
-                <button class="login-circle apple">
+                <button class="login-circle apple" id="appleLoginButton">
                     <i class="fab fa-apple"></i>
                 </button>
                 
-                <button class="login-circle wechat">
+                <button class="login-circle wechat" id="wechatLoginButton">
                     <i class="fab fa-weixin"></i>
                 </button>
                 
-                <button class="login-circle guest" onclick="window.location.href='home.html'">
+                <button class="login-circle guest" id="guestLoginButton">
                     <i class="fas fa-user"></i>
                 </button>
             </div>
@@ -342,11 +342,57 @@
     </div>
     
     <script src="../js/common.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
     <script>
         // 添加动画效果
         document.addEventListener('DOMContentLoaded', function() {
             // 创建随机漂浮元素
             createFloatingElements();
+            
+            // 检查用户是否已登录
+            if (window.auth && auth.isLoggedIn()) {
+                // 如果已登录，直接跳转到首页
+                window.location.href = 'home.html';
+            }
+            
+            // 创建故事按钮点击事件
+            document.getElementById('createStoryButton').addEventListener('click', async function() {
+                // 检查是否已登录
+                if (window.auth && auth.isLoggedIn()) {
+                    // 已登录，跳转到故事生成页面
+                    window.location.href = 'story_generation.html';
+                } else {
+                    // 未登录，先以游客身份登录
+                    const success = await auth.loginAsGuest();
+                    if (success) {
+                        // 登录成功，跳转到故事生成页面
+                        window.location.href = 'story_generation.html';
+                    }
+                }
+            });
+            
+            // 登录按钮点击事件
+            document.getElementById('appleLoginButton').addEventListener('click', async function() {
+                const success = await auth.loginWithApple();
+                if (success) {
+                    window.location.href = 'home.html';
+                }
+            });
+            
+            document.getElementById('wechatLoginButton').addEventListener('click', async function() {
+                const success = await auth.loginWithWeChat();
+                if (success) {
+                    window.location.href = 'home.html';
+                }
+            });
+            
+            document.getElementById('guestLoginButton').addEventListener('click', async function() {
+                const success = await auth.loginAsGuest();
+                if (success) {
+                    window.location.href = 'home.html';
+                }
+            });
         });
         
         // 创建随机漂浮元素

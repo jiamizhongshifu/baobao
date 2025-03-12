@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 宝宝故事</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <style>
+        body {
+            background-color: #F2E9DE;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            max-width: 90%;
+            height: 100vh;
+            position: relative;
+            z-index: 10;
+            margin: 0 auto;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        
+        .login-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #333;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .login-subtitle {
+            font-size: 18px;
+            margin-bottom: 40px;
+            color: #666;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .login-options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 320px;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .login-button:active {
+            transform: scale(0.98);
+        }
+        
+        .login-button i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .apple-login {
+            background-color: #000;
+            color: white;
+        }
+        
+        .wechat-login {
+            background-color: #07C160;
+            color: white;
+        }
+        
+        .guest-login {
+            background-color: #F5F5F5;
+            color: #333;
+            border: 1px solid #DDD;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 20;
+        }
+        
+        .back-button i {
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .background-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .decoration-circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.5;
+        }
+        
+        .decoration-circle.yellow {
+            background-color: #FFD966;
+            width: 300px;
+            height: 300px;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .decoration-circle.pink {
+            background-color: #FFCAD4;
+            width: 200px;
+            height: 200px;
+            bottom: 50px;
+            left: -50px;
+        }
+        
+        .decoration-circle.blue {
+            background-color: #B5EAD7;
+            width: 250px;
+            height: 250px;
+            bottom: -100px;
+            right: 50px;
+        }
+        
+        .privacy-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 30px;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        
+        .privacy-text a {
+            color: #333;
+            text-decoration: underline;
+        }
+        
+        /* 动画效果 */
+        .fade-in {
+            animation: fadeIn 0.8s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-decoration">
+        <div class="decoration-circle yellow"></div>
+        <div class="decoration-circle pink"></div>
+        <div class="decoration-circle blue"></div>
+    </div>
+    
+    <a href="welcome.html" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    
+    <div class="login-container">
+        <svg class="logo fade-in" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="90" fill="#FFF" />
+            <path d="M100,20 C55.8,20 20,55.8 20,100 C20,144.2 55.8,180 100,180 C144.2,180 180,144.2 180,100 C180,55.8 144.2,20 100,20 Z M100,160 C66.9,160 40,133.1 40,100 C40,66.9 66.9,40 100,40 C133.1,40 160,66.9 160,100 C160,133.1 133.1,160 100,160 Z" fill="#FFD966"/>
+            <circle cx="75" cy="80" r="12" fill="#333" />
+            <circle cx="125" cy="80" r="12" fill="#333" />
+            <path d="M70,120 C70,120 85,145 100,145 C115,145 130,120 130,120" stroke="#333" stroke-width="8" fill="none" stroke-linecap="round" />
+        </svg>
+        
+        <h1 class="login-title fade-in" style="animation-delay: 0.2s;">欢迎回来</h1>
+        <p class="login-subtitle fade-in" style="animation-delay: 0.4s;">请选择登录方式继续</p>
+        
+        <div class="login-options fade-in" style="animation-delay: 0.6s;">
+            <button class="login-button apple-login" id="appleLoginButton">
+                <i class="fab fa-apple"></i>
+                使用Apple账号登录
+            </button>
+            
+            <button class="login-button wechat-login" id="wechatLoginButton">
+                <i class="fab fa-weixin"></i>
+                使用微信账号登录
+            </button>
+            
+            <button class="login-button guest-login" id="guestLoginButton">
+                <i class="fas fa-user"></i>
+                游客模式
+            </button>
+        </div>
+        
+        <p class="privacy-text fade-in" style="animation-delay: 0.8s;">
+            登录即表示您同意我们的<a href="privacy.html">隐私政策</a>和<a href="terms.html">服务条款</a>。我们不会在未经您同意的情况下分享您的个人信息。
+        </p>
+    </div>
+    
+    <script src="../js/common.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查用户是否已登录
+            if (window.auth && auth.isLoggedIn()) {
+                // 如果已登录，直接跳转到首页
+                window.location.href = 'home.html';
+            }
+            
+            // 登录按钮点击事件
+            document.getElementById('appleLoginButton').addEventListener('click', async function() {
+                try {
+                    const success = await auth.loginWithApple();
+                    if (success) {
+                        window.location.href = 'home.html';
+                    }
+                } catch (error) {
+                    showToast('登录失败: ' + error.message);
+                }
+            });
+            
+            document.getElementById('wechatLoginButton').addEventListener('click', async function() {
+                try {
+                    const success = await auth.loginWithWeChat();
+                    if (success) {
+                        window.location.href = 'home.html';
+                    }
+                } catch (error) {
+                    showToast('登录失败: ' + error.message);
+                }
+            });
+            
+            document.getElementById('guestLoginButton').addEventListener('click', async function() {
+                try {
+                    const success = await auth.loginAsGuest();
+                    if (success) {
+                        window.location.href = 'home.html';
+                    }
+                } catch (error) {
+                    showToast('登录失败: ' + error.message);
+                }
+            });
+            
+            // 监听登录事件
+            document.addEventListener('userLogin', function(event) {
+                console.log('用户登录成功:', event.detail);
+            });
+            
+            // 监听CloudKit同步事件
+            document.addEventListener('cloudKitSyncReady', function() {
+                console.log('CloudKit同步已准备就绪');
+            });
+            
+            document.addEventListener('cloudKitSyncFailed', function(event) {
+                console.error('CloudKit同步失败:', event.detail.error);
+            });
+        });
+    </script>
+</body>
+</html> 
