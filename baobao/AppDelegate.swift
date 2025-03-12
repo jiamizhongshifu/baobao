@@ -107,6 +107,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     // 确保所有服务都被初始化
     private func initializeServices() {
+        // 初始化数据管理器
+        let _ = DataManager.shared
+        
         // 初始化数据服务
         let _ = DataService.shared
         
