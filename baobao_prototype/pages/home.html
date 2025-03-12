@@ -184,6 +184,36 @@
                 log(`资源预加载失败: ${e.message}`, 'error');
             }
         }
+
+        // 暴露给其他页面的获取当前播放故事的函数
+        window.getCurrentPlayingStory = function() {
+            return currentPlayingStory;
+        };
+        
+        // 从详情页接收播放状态更新
+        window.updatePlayStateFromDetailPage = function(playingState, storyData) {
+            if (storyData) {
+                // 如果详情页中的故事不同于当前播放的故事，更新当前故事
+                if (!currentPlayingStory || currentPlayingStory.id !== storyData.id) {
+                    currentPlayingStory = {
+                        id: storyData.id,
+                        title: storyData.title,
+                        audioURL: storyData.audioURL || ''
+                    };
+                    // 更新播放器标题
+                    const playerTitle = document.querySelector('.player-title');
+                    if (playerTitle) {
+                        playerTitle.textContent = `正在播放：${storyData.title}`;
+                    }
+                }
+                
+                // 更新播放状态
+                if (isPlaying !== playingState) {
+                    // 只有状态不同时才切换，避免重复触发
+                    togglePlay();
+                }
+            }
+        };
     </script>
     
     <!-- 本地优先加载样式 -->
@@ -256,11 +286,11 @@
             color: #333;
         }
         
-        .settings-button {
+        .new-story-button {
             width: 50px;
             height: 50px;
             border-radius: 25px;
-            background-color: #000;
+            background-color: #FF6B6B;
             color: white;
             display: flex;
             align-items: center;
@@ -270,7 +300,7 @@
             transition: transform 0.3s;
         }
         
-        .settings-button:active {
+        .new-story-button:active {
             transform: scale(0.95);
         }
         
@@ -355,10 +385,17 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             position: relative;
             transition: transform 0.3s;
+            cursor: pointer;
+            margin-bottom: 15px;
+            user-select: none;
         }
         
         .story-card:active {
             transform: scale(0.98);
+        }
+        
+        .story-card:hover {
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
         }
         
         .cassette-container {
@@ -440,6 +477,7 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             margin: 20px 0 30px;
             transform: none;
+            display: block;
         }
         
         .story-player.active {
@@ -448,7 +486,7 @@
         
         .player-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin-bottom: 25px;
         }
@@ -457,8 +495,7 @@
             font-size: 24px;
             font-weight: 700;
             color: #333;
-            flex: 1;
-            margin-right: 15px;
+            text-align: center;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -690,6 +727,29 @@
             color: #999;
             font-size: 14px;
         }
+        
+        .story-play-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: none;
+            outline: none;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, background-color 0.2s;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .story-play-button:active {
+            transform: scale(0.95);
+            background-color: #3e8e41;
+        }
     </style>
 </head>
 <body>
@@ -702,8 +762,8 @@
             <span class="baby-age">/ 2岁</span>
         </div>
         
-        <button class="settings-button" id="toggleSidebarBtn">
-            <i class="fas fa-cog"></i>
+        <button class="new-story-button" id="createNewStoryBtn">
+            <i class="fas fa-plus"></i>
         </button>
     </div>
     
@@ -716,9 +776,6 @@
         <div class="story-player" id="storyPlayer">
             <div class="player-header">
                 <h3 class="player-title">正在播放：太空冒险</h3>
-                <button class="close-player" onclick="closePlayer()">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
             
             <div class="player-controls">
@@ -862,6 +919,7 @@
         let currentAudio = null;
         let retryCount = 0;
         let progressInterval = null;
+        let currentPlayingStory = null; // 当前播放的故事
         const maxRetries = 3;
         
         // 初始化页面
@@ -883,6 +941,11 @@
                 
                 log('替换猫咪图标');
                 replaceCatIcons();
+                
+                // 确保故事卡片有点击事件
+                setTimeout(() => {
+                    checkAndFixCardEvents();
+                }, 500);
                 
                 log('页面初始化完成');
             } catch (error) {
@@ -1004,28 +1067,26 @@
                         event.stopPropagation(); // 阻止事件冒泡
                         const storyId = button.getAttribute('data-id');
                         const audioURL = button.getAttribute('data-audio');
+                        const storyTitle = button.closest('.story-card').querySelector('.story-cover-title').textContent;
                         
-                        // 如果有音频URL，直接播放
-                        if (audioURL && audioURL !== '') {
-                            try {
-                                await api.playAudio(audioURL);
-                                showToast('开始播放故事');
-                            } catch (error) {
-                                console.error('播放故事失败:', error);
-                                showToast(`播放失败: ${error.message}`);
-                            }
-                        } else {
-                            // 否则跳转到故事详情页
-                            location.href = `story_detail.html?id=${storyId}`;
-                        }
+                        // 直接在播放器中播放故事
+                        playStoryInPlayer(storyTitle, storyId, audioURL);
                     });
                 });
                 
                 // 添加故事卡片点击事件
                 document.querySelectorAll('.story-card').forEach(card => {
-                    card.addEventListener('click', () => {
+                    card.addEventListener('click', (event) => {
+                        // 如果点击的是播放按钮，不执行跳转
+                        if (event.target.closest('.story-play-button')) {
+                            return;
+                        }
+                        
                         const storyId = card.dataset.id;
-                        location.href = `story_detail.html?id=${storyId}`;
+                        log(`点击故事卡片，准备跳转到详情页，故事ID: ${storyId}`);
+                        
+                        // 使用绝对路径确保导航正确
+                        window.location.href = `story_detail.html?id=${storyId}`;
                     });
                 });
             } catch (error) {
@@ -1134,15 +1195,26 @@
                         button.addEventListener('click', (event) => {
                             event.stopPropagation(); // 阻止事件冒泡
                             const storyId = button.getAttribute('data-id');
-                            location.href = `story_detail.html?id=${storyId}&mock=true`;
+                            const storyTitle = button.closest('.story-card').querySelector('.story-cover-title').textContent;
+                            
+                            // 直接在播放器中播放故事
+                            playStoryInPlayer(storyTitle, storyId, '');
                         });
                     });
                     
                     // 添加故事卡片点击事件
                     document.querySelectorAll('.story-card').forEach(card => {
-                        card.addEventListener('click', () => {
+                        card.addEventListener('click', (event) => {
+                            // 如果点击的是播放按钮，不执行跳转
+                            if (event.target.closest('.story-play-button')) {
+                                return;
+                            }
+                            
                             const storyId = card.dataset.id;
-                            location.href = `story_detail.html?id=${storyId}&mock=true`;
+                            log(`点击故事卡片，准备跳转到详情页，故事ID: ${storyId}`);
+                            
+                            // 使用绝对路径确保导航正确
+                            window.location.href = `story_detail.html?id=${storyId}&mock=true`;
                         });
                     });
                 }
@@ -1153,7 +1225,7 @@
         function initSidebar() {
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+            const createNewStoryBtn = document.getElementById('createNewStoryBtn');
             const toggleSidebarProfile = document.getElementById('toggleSidebar');
             
             if (!sidebar || !sidebarOverlay) {
@@ -1161,18 +1233,17 @@
                 return;
             }
             
-            if (!toggleSidebarBtn || !toggleSidebarProfile) {
-                log('侧边栏触发按钮未找到', 'error');
+            if (!createNewStoryBtn || !toggleSidebarProfile) {
+                log('创建故事按钮或侧边栏触发按钮未找到', 'error');
                 return;
             }
             
-            log('设置侧边栏事件监听器');
+            log('设置事件监听器');
             
-            // 点击设置按钮打开侧边栏
-            toggleSidebarBtn.addEventListener('click', () => {
-                log('点击设置按钮，打开侧边栏');
-                sidebar.classList.add('open');
-                sidebarOverlay.classList.add('open');
+            // 点击创建新故事按钮
+            createNewStoryBtn.addEventListener('click', () => {
+                log('点击创建新故事按钮');
+                window.location.href = 'story_themes.html';
             });
             
             // 点击头像打开侧边栏
@@ -1201,7 +1272,7 @@
             }
             
             try {
-                player.querySelector('.player-title').textContent = title;
+                player.querySelector('.player-title').textContent = `正在播放：${title}`;
                 player.querySelector('#totalTime').textContent = totalTime;
                 player.querySelector('#currentTime').textContent = '00:00';
                 player.querySelector('#progressBar').style.width = '0%';
@@ -1219,10 +1290,72 @@
                 
                 // 显示播放器
                 player.classList.add('active');
+                // 确保播放器可见
+                player.style.display = 'block';
                 log('故事播放器已激活');
             } catch (error) {
                 log(`播放故事失败: ${error.message}`, 'error');
             }
+        }
+        
+        // 在播放器中播放故事
+        function playStoryInPlayer(title, storyId, audioURL) {
+            log(`准备在播放器中播放故事: "${title}", ID: ${storyId}`);
+            
+            // 记录当前播放的故事
+            currentPlayingStory = {
+                id: storyId,
+                title: title,
+                audioURL: audioURL
+            };
+            
+            // 显示播放器并设置标题
+            playStory(title, '05:00'); // 默认5分钟
+            
+            // 如果有音频URL，使用api播放
+            if (audioURL && audioURL !== '') {
+                try {
+                    api.playAudio(audioURL);
+                    
+                    // 显示消息（直接创建toast元素而不调用可能递归的函数）
+                    displayToastDirectly('开始播放故事');
+                    
+                    // 自动开始播放
+                    togglePlay();
+                } catch (error) {
+                    console.error('播放故事失败:', error);
+                    displayToastDirectly(`播放失败: ${error.message}`);
+                }
+            } else {
+                // 模拟播放，直接切换播放状态
+                displayToastDirectly(`正在播放：${title}`);
+                
+                // 延迟一下再切换播放状态，视觉效果更好
+                setTimeout(() => {
+                    togglePlay();
+                }, 500);
+            }
+        }
+        
+        // 直接显示toast消息，避免潜在的递归问题
+        function displayToastDirectly(message) {
+            log(`直接显示Toast消息: "${message}"`);
+            
+            let toast = document.getElementById('toast');
+            
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.style.cssText = 'position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background-color: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; z-index: 9999; font-size: 16px; transition: opacity 0.3s;';
+                document.body.appendChild(toast);
+            }
+            
+            toast.textContent = message;
+            toast.style.opacity = '1';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 2000);
         }
         
         // 切换播放/暂停
@@ -1241,43 +1374,51 @@
                 playIcon.classList.remove('fa-play');
                 playIcon.classList.add('fa-pause');
                 simulateProgress();
-                showToast('开始播放');
+                displayToastDirectly('开始播放');
+                
+                // 将播放状态通知给可能打开的详情页
+                notifyDetailPagePlayingState(true);
             } else {
                 playIcon.classList.remove('fa-pause');
                 playIcon.classList.add('fa-play');
                 clearInterval(progressInterval);
-                showToast('暂停播放');
+                displayToastDirectly('暂停播放');
+                
+                // 将暂停状态通知给可能打开的详情页
+                notifyDetailPagePlayingState(false);
             }
         }
         
-        // 关闭播放器
-        function closePlayer() {
-            log('关闭播放器');
-            const player = document.getElementById('storyPlayer');
-            if (player) {
-                player.style.display = 'none';
-            }
-            
-            // 停止播放
-            isPlaying = false;
-            clearInterval(progressInterval);
-            const playIcon = document.getElementById('playIcon');
-            if (playIcon) {
-                playIcon.classList.remove('fa-pause');
-                playIcon.classList.add('fa-play');
+        // 通知详情页播放状态变化
+        function notifyDetailPagePlayingState(isPlaying) {
+            try {
+                // 尝试获取所有由此页面打开的子窗口
+                if (window.opener) {
+                    // 修正window.opener的使用方式，应该是单个窗口而不是数组
+                    // 检查是否是故事详情页
+                    if (window.opener && !window.opener.closed && 
+                        window.opener.location.href.includes('story_detail.html')) {
+                        // 调用父窗口的函数来更新播放状态
+                        if (window.opener.updatePlayStateFromParent) {
+                            window.opener.updatePlayStateFromParent(isPlaying, currentPlayingStory);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('通知详情页状态失败', e);
             }
         }
         
         // 上一曲
         function previousTrack() {
             log('切换到上一曲');
-            showToast('切换到上一曲');
+            displayToastDirectly('切换到上一曲');
         }
         
         // 下一曲
         function nextTrack() {
             log('切换到下一曲');
-            showToast('切换到下一曲');
+            displayToastDirectly('切换到下一曲');
         }
         
         // 模拟进度
@@ -1331,38 +1472,11 @@
                             playIcon.classList.remove('fa-pause');
                             playIcon.classList.add('fa-play');
                         }
-                        showToast('播放完成');
+                        displayToastDirectly('播放完成');
                     }
                 }, 1000);
             } catch (error) {
                 log(`模拟进度失败: ${error.message}`, 'error');
-            }
-        }
-        
-        // 显示Toast消息
-        function showToast(message) {
-            log(`显示Toast消息: "${message}"`);
-            
-            // 检查common.js是否提供了showToast函数
-            if (typeof window.showToast === 'function') {
-                window.showToast(message);
-            } else {
-                // 如果没有，创建一个简单的Toast实现
-                let toast = document.getElementById('toast');
-                
-                if (!toast) {
-                    toast = document.createElement('div');
-                    toast.id = 'toast';
-                    toast.style.cssText = 'position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background-color: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; z-index: 9999; font-size: 16px; transition: opacity 0.3s;';
-                    document.body.appendChild(toast);
-                }
-                
-                toast.textContent = message;
-                toast.style.opacity = '1';
-                
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                }, 2000);
             }
         }
         
@@ -1377,7 +1491,65 @@
         // 添加页面加载完成日志
         window.addEventListener('load', () => {
             log('页面完全加载完成');
+            
+            // 页面加载完成后，确保所有故事卡片都有点击事件
+            setTimeout(() => {
+                checkAndFixCardEvents();
+            }, 1000);
         });
+        
+        // 检查并修复卡片事件绑定
+        function checkAndFixCardEvents() {
+            log('检查故事卡片事件绑定');
+            const cards = document.querySelectorAll('.story-card');
+            
+            if (cards.length > 0) {
+                log(`找到 ${cards.length} 个故事卡片，确保事件绑定`);
+                
+                cards.forEach((card, index) => {
+                    // 移除所有现有的点击事件（避免重复绑定）
+                    const newCard = card.cloneNode(true);
+                    card.parentNode.replaceChild(newCard, card);
+                    
+                    const storyId = newCard.dataset.id;
+                    const storyTitle = newCard.querySelector('.story-cover-title')?.textContent || `故事${index+1}`;
+                    
+                    // 重新添加播放按钮点击事件
+                    const playButton = newCard.querySelector('.story-play-button');
+                    if (playButton) {
+                        playButton.addEventListener('click', (event) => {
+                            event.stopPropagation(); // 阻止事件冒泡
+                            event.preventDefault(); // 阻止默认行为
+                            log(`点击播放按钮, 故事ID: ${storyId}, 标题: ${storyTitle}`);
+                            
+                            const audioURL = playButton.getAttribute('data-audio') || '';
+                            playStoryInPlayer(storyTitle, storyId, audioURL);
+                        });
+                    }
+                    
+                    // 添加卡片点击事件
+                    newCard.addEventListener('click', (event) => {
+                        // 如果点击的是播放按钮，不执行跳转
+                        if (event.target.closest('.story-play-button')) {
+                            return;
+                        }
+                        
+                        log(`点击故事卡片, 故事ID: ${storyId}, 标题: ${storyTitle}`);
+                        
+                        try {
+                            // 导航到故事详情页
+                            const url = `story_detail.html?id=${storyId}`;
+                            log(`准备跳转到: ${url}`);
+                            window.location.href = url;
+                        } catch (e) {
+                            log(`跳转失败: ${e.message}`, 'error');
+                        }
+                    });
+                });
+            } else {
+                log('未找到故事卡片', 'warn');
+            }
+        }
         
         // 初始化创建故事按钮
         function initCreateStoryButton() {
@@ -1413,12 +1585,6 @@
             const playButton = document.querySelector('.control-button.primary');
             if (playButton) {
                 playButton.addEventListener('click', togglePlay);
-            }
-            
-            // 关闭播放器按钮
-            const closePlayerButton = document.querySelector('.close-player');
-            if (closePlayerButton) {
-                closePlayerButton.addEventListener('click', closePlayer);
             }
             
             // 上一曲按钮
