@@ -200,7 +200,7 @@ struct SyncSettingsView: View {
         isSyncing = true
         syncResultMessage = nil
         
-        DataService.shared.triggerSync { result in
+        CoreDataService.shared.triggerSync { result in
             isSyncing = false
             
             switch result {

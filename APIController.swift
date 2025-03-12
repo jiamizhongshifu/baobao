@@ -7,7 +7,7 @@ class APIController: NSObject {
     static let shared = APIController()
     private let logger = Logger(subsystem: "com.example.baobao", category: "APIController")
     private var webView: WKWebView?
-    private let dataService = DataService.shared
+    private let dataService = APIDataService.shared
     private let speechService = SpeechService.shared
     
     private override init() {

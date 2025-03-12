@@ -2,51 +2,13 @@ import Foundation
 import os.log
 import CoreData
 
-// MARK: - 宝宝模型
-struct Child: Codable {
-    let id: String
-    let name: String
-    let age: Int
-    let gender: Gender
-    let interests: [String]
-    let createdAt: Date
-    
-    enum Gender: String, Codable, CaseIterable {
-        case male = "男孩"
-        case female = "女孩"
-        
-        var icon: String {
-            switch self {
-            case .male:
-                return "boy"
-            case .female:
-                return "girl"
-            }
-        }
-    }
-    
-    init(id: String = UUID().uuidString, 
-         name: String, 
-         age: Int, 
-         gender: Gender, 
-         interests: [String] = [], 
-         createdAt: Date = Date()) {
-        self.id = id
-        self.name = name
-        self.age = age
-        self.gender = gender
-        self.interests = interests
-        self.createdAt = createdAt
-    }
-}
-
-// MARK: - 数据存储服务
-class DataService {
+// MARK: - API数据服务
+class APIDataService {
     // 单例模式
-    static let shared = DataService()
+    static let shared = APIDataService()
     
     // 创建专用的日志记录器
-    private let logger = Logger(subsystem: "com.baobao.app", category: "data-service")
+    private let logger = Logger(subsystem: "com.example.baobao", category: "APIDataService")
     
     // 文件管理器
     private let fileManager = FileManager.default
@@ -210,6 +172,57 @@ class DataService {
     // 获取宝宝的故事
     func getStories(forChildName childName: String) -> [Story] {
         return stories.filter { $0.childName == childName }
+    }
+    
+    // MARK: - 收藏相关方法
+    
+    // 收藏故事
+    func favoriteStory(withId id: String) -> Bool {
+        guard let index = stories.firstIndex(where: { $0.id == id }) else {
+            logger.warning("⚠️ 未找到要收藏的故事: \(id)")
+            return false
+        }
+        
+        let story = stories[index]
+        stories[index] = story.updateFavoriteStatus(true)
+        
+        // 保存数据
+        saveStories()
+        
+        logger.info("✅ 收藏故事成功: \(story.title)")
+        return true
+    }
+    
+    // 取消收藏故事
+    func unfavoriteStory(withId id: String) -> Bool {
+        guard let index = stories.firstIndex(where: { $0.id == id }) else {
+            logger.warning("⚠️ 未找到要取消收藏的故事: \(id)")
+            return false
+        }
+        
+        let story = stories[index]
+        stories[index] = story.updateFavoriteStatus(false)
+        
+        // 保存数据
+        saveStories()
+        
+        logger.info("✅ 取消收藏故事成功: \(story.title)")
+        return true
+    }
+    
+    // 检查故事是否已收藏
+    func isStoryFavorited(withId id: String) -> Bool {
+        guard let story = stories.first(where: { $0.id == id }) else {
+            logger.warning("⚠️ 未找到要检查的故事: \(id)")
+            return false
+        }
+        
+        return story.isFavorite
+    }
+    
+    // 获取收藏的故事列表
+    func getFavoriteStories() -> [Story] {
+        return stories.filter { $0.isFavorite }
     }
     
     // MARK: - 数据持久化

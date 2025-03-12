@@ -7,6 +7,7 @@
 
 import UIKit
 import os.log
+import SwiftUI
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -25,17 +26,28 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 创建窗口实例
         window = UIWindow(windowScene: windowScene)
         
-        // 创建首页视图控制器
-        let homeViewController = HomeViewController()
+        // 创建 SwiftUI 视图模型
+        let storyViewModel = StoryViewModel()
+        let childViewModel = ChildViewModel()
+        let audioPlayerViewModel = AudioPlayerViewModel()
         
-        // 创建导航控制器并设置首页为根视图控制器
-        let navigationController = UINavigationController(rootViewController: homeViewController)
+        // 创建 SwiftUI 视图
+        let contentView = ContentView()
+            .environmentObject(storyViewModel)
+            .environmentObject(childViewModel)
+            .environmentObject(audioPlayerViewModel)
         
-        // 设置导航控制器为窗口的根视图控制器
-        window?.rootViewController = navigationController
+        // 创建 UIHostingController 来托管 SwiftUI 视图
+        let hostingController = UIHostingController(rootView: contentView)
+        
+        // 设置 hostingController 为窗口的根视图控制器
+        window?.rootViewController = hostingController
         
         // 使窗口可见
         window?.makeKeyAndVisible()
+        
+        // 设置应用的外观
+        setupAppearance()
         
         logger.info("✅ 窗口场景配置完成")
     }
@@ -58,5 +70,22 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneDidEnterBackground(_ scene: UIScene) {
         logger.info("场景已进入后台")
+    }
+    
+    // 设置应用的外观
+    private func setupAppearance() {
+        // 设置导航栏外观
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(named: "PrimaryBackground")
+        appearance.titleTextAttributes = [.foregroundColor: UIColor(named: "PrimaryText") ?? .black]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor(named: "PrimaryText") ?? .black]
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        
+        // 设置标签栏外观
+        UITabBar.appearance().backgroundColor = UIColor(named: "PrimaryBackground")
     }
 } 

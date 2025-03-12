@@ -20,7 +20,7 @@ class APIController: NSObject {
     // 服务
     private let storyService = StoryService.shared
     private let speechService: SpeechServiceProtocol = SpeechService.shared
-    private let dataService = DataService.shared
+    private let dataService = APIDataService.shared
     
     // 私有初始化方法
     private override init() {
@@ -318,7 +318,6 @@ extension APIController: WKScriptMessageHandler {
             content: content,
             theme: theme,
             childName: childName,
-            childAge: 8, // 默认年龄，可以从请求参数中获取实际值
             audioURL: audioURL?.absoluteString
         )
         

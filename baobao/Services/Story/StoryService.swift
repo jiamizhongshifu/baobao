@@ -165,7 +165,7 @@ class StoryService {
     private let logger = Logger(subsystem: "com.baobao.StoryService", category: "StoryService")
     
     // 数据服务
-    private let dataService = DataService.shared
+    private let dataService = APIDataService.shared
     
     // 重试配置
     private let maxRetries = 3
@@ -368,8 +368,7 @@ class StoryService {
                         title: title,
                         content: storyContent,
                         theme: self.extractThemeFromPrompt(prompt),
-                        childName: childName,
-                        childAge: childAge
+                        childName: childName
                     )
                     
                     self.logger.info("✅ 故事生成成功: \(title)")
@@ -493,5 +492,43 @@ class StoryService {
         }
         
         return "未知主题"
+    }
+    
+    /// 生成故事（兼容 StoryViewModel 调用）
+    /// - Parameters:
+    ///   - theme: 故事主题（字符串形式）
+    ///   - characterName: 角色名称
+    ///   - length: 故事长度（字符串形式）
+    ///   - completion: 完成回调
+    func generateStory(
+        theme: String,
+        characterName: String,
+        length: String,
+        completion: @escaping (Result<Story, Error>) -> Void
+    ) {
+        // 转换主题
+        guard let themeEnum = StoryTheme.allCases.first(where: { $0.rawValue == theme || $0.rawValue.contains(theme) || theme.contains($0.rawValue) }) else {
+            completion(.failure(StoryServiceError.invalidParameters))
+            return
+        }
+        
+        // 转换长度
+        guard let lengthEnum = StoryLength.allCases.first(where: { $0.rawValue == length || $0.rawValue.contains(length) || length.contains($0.rawValue) }) else {
+            completion(.failure(StoryServiceError.invalidParameters))
+            return
+        }
+        
+        // 获取选中的宝宝年龄，默认为5岁
+        let childAge = 5
+        
+        // 调用主要的生成方法
+        generateStory(
+            theme: themeEnum,
+            childName: characterName,
+            childAge: childAge,
+            childInterests: [],
+            length: lengthEnum,
+            completion: completion
+        )
     }
 } 

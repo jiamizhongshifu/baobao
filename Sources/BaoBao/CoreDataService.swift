@@ -3,9 +3,9 @@ import CoreData
 import os.log
 
 /// 数据服务类，负责App中所有数据的持久化存储和检索
-class DataService {
+class CoreDataService {
     /// 共享实例
-    static let shared = DataService()
+    static let shared = CoreDataService()
     
     /// 日志记录器
     private let logger = Logger(subsystem: "com.example.baobao", category: "DataService")
@@ -662,7 +662,7 @@ class DataService {
 
 // MARK: - CloudKit同步委托
 
-extension DataService: CloudKitSyncDelegate {
+extension CoreDataService: CloudKitSyncDelegate {
     func cloudKitSyncStatusChanged(_ status: CloudKitSyncStatus) {
         switch status {
         case .available:

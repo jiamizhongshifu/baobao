@@ -34,7 +34,7 @@ enum StoryTheme: String, CaseIterable {
         case .animals:
             return "paw"
         case .space:
-            return "rocket"
+            return "airplane"
         case .princess:
             return "crown"
         case .ocean:

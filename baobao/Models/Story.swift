@@ -12,13 +12,13 @@ enum StoryTheme: String, Codable, CaseIterable {
     var icon: String {
         switch self {
         case .space:
-            return "rocket"
+            return "airplane"
         case .fairy:
             return "wand.and.stars"
         case .animal:
             return "tortoise"
         case .dinosaur:
-            return "fossil"
+            return "leaf"
         case .ocean:
             return "fish"
         case .fantasy:
@@ -46,37 +46,45 @@ enum StoryLength: String, Codable, CaseIterable {
 }
 
 // MARK: - 故事模型
-struct Story: Codable {
+struct Story: Identifiable, Codable {
     let id: String
     let title: String
     let content: String
     let theme: String
     let childName: String
-    let childAge: Int
     let audioURL: String?
-    let imageURL: String?
+    let isFavorite: Bool
     let createdAt: Date
-    let lastPlayedAt: Date?
     
     init(id: String = UUID().uuidString,
          title: String,
          content: String,
          theme: String,
          childName: String,
-         childAge: Int,
          audioURL: String? = nil,
-         imageURL: String? = nil,
-         createdAt: Date = Date(),
-         lastPlayedAt: Date? = nil) {
+         isFavorite: Bool = false,
+         createdAt: Date = Date()) {
         self.id = id
         self.title = title
         self.content = content
         self.theme = theme
         self.childName = childName
-        self.childAge = childAge
         self.audioURL = audioURL
-        self.imageURL = imageURL
+        self.isFavorite = isFavorite
         self.createdAt = createdAt
-        self.lastPlayedAt = lastPlayedAt
+    }
+    
+    // 更新收藏状态
+    func updateFavoriteStatus(_ isFavorite: Bool) -> Story {
+        return Story(
+            id: self.id,
+            title: self.title,
+            content: self.content,
+            theme: self.theme,
+            childName: self.childName,
+            audioURL: self.audioURL,
+            isFavorite: isFavorite,
+            createdAt: self.createdAt
+        )
     }
 } 

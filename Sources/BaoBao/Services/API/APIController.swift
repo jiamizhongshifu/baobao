@@ -14,7 +14,7 @@ class APIController: NSObject {
     // 服务
     private let storyService = StoryService.shared
     private let speechService = SpeechService.shared
-    private let dataService = DataService.shared
+    private let dataService = CoreDataService.shared
     
     // 私有初始化方法
     private override init() {

@@ -41,13 +41,13 @@ struct Child: Codable {
     }
 }
 
-// MARK: - 数据存储服务
-class DataService {
+// MARK: - API数据服务
+class APIDataServicePackage {
     // 单例模式
-    static let shared = DataService()
+    static let shared = APIDataServicePackage()
     
     // 创建专用的日志记录器
-    private let logger = Logger(subsystem: "com.baobao.app", category: "data-service")
+    private let logger = Logger(subsystem: "com.baobao.app", category: "APIDataServicePackage")
     
     // 文件管理器
     private let fileManager = FileManager.default

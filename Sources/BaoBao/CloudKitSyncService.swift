@@ -269,7 +269,7 @@ class CloudKitSyncService {
             switch result {
             case .success(let cloudStories):
                 // 获取本地故事进行对比和合并
-                DataService.shared.getStories { localResult in
+                CoreDataService.shared.getStories { localResult in
                     switch localResult {
                     case .success(let localStories):
                         self.mergeStories(local: localStories, cloud: cloudStories)
@@ -290,7 +290,7 @@ class CloudKitSyncService {
             switch result {
             case .success(let cloudChildren):
                 // 获取本地宝宝信息进行对比和合并
-                DataService.shared.getChildren { localResult in
+                CoreDataService.shared.getChildren { localResult in
                     switch localResult {
                     case .success(let localChildren):
                         self.mergeChildren(local: localChildren, cloud: cloudChildren)
@@ -643,7 +643,7 @@ class CloudKitSyncService {
         // 云端有，本地没有的 -> 下载到本地
         let cloudOnly = cloud.filter { localDict[$0.id] == nil }
         for story in cloudOnly {
-            DataService.shared.saveStory(story) { _ in }
+            CoreDataService.shared.saveStory(story) { _ in }
         }
         
         // 都有的 -> 根据时间戳决定
@@ -656,7 +656,7 @@ class CloudKitSyncService {
                 syncStory(localStory, operation: .update) { _ in }
             } else if cloudStory.createdAt > localStory.createdAt {
                 // 云端较新，更新本地
-                DataService.shared.saveStory(cloudStory) { _ in }
+                CoreDataService.shared.saveStory(cloudStory) { _ in }
             }
             // 时间戳相同则不处理
         }
@@ -679,7 +679,7 @@ class CloudKitSyncService {
         // 云端有，本地没有的 -> 下载到本地
         let cloudOnly = cloud.filter { localDict[$0.id] == nil }
         for child in cloudOnly {
-            DataService.shared.saveChild(child) { _ in }
+            CoreDataService.shared.saveChild(child) { _ in }
         }
         
         // 都有的 -> 根据时间戳决定
@@ -692,7 +692,7 @@ class CloudKitSyncService {
                 syncChild(localChild, operation: .update) { _ in }
             } else if cloudChild.createdAt > localChild.createdAt {
                 // 云端较新，更新本地
-                DataService.shared.saveChild(cloudChild) { _ in }
+                CoreDataService.shared.saveChild(cloudChild) { _ in }
             }
             // 时间戳相同则不处理
         }
