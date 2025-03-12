@@ -130,4 +130,9 @@ baobao/test.html
 *.bak
 *.bak2
 reference/
-CursorMind/ 
+CursorMind/
+
+# Test results
+TestResults.xcresult/
+baobaoUITests/UITestResults.xcresult/
+*.xcresult/ 
