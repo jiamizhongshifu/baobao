@@ -1,0 +1,10 @@
+// TestConfig.xcconfig
+// 配置测试路径
+
+// 设置测试搜索路径
+TEST_TARGET_NAME = baobao
+SWIFT_INCLUDE_PATHS = $(SRCROOT)/Tests
+OTHER_LDFLAGS = -ObjC
+OTHER_SWIFT_FLAGS = -Xcc -I$(SRCROOT)/Tests
+FRAMEWORK_SEARCH_PATHS = $(inherited) $(SRCROOT)/Tests
+TEST_FRAMEWORK_SEARCH_PATHS = $(inherited) $(SRCROOT)/Tests 
