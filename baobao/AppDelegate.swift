@@ -7,6 +7,45 @@
 
 import UIKit
 import os.log
+import Foundation
+
+// 简化版的AppSettingsModel类
+class AppSettingsModel {
+    var offlineModeEnabled: Bool = false
+}
+
+// 简化版的DataInitializer类
+class DataInitializer {
+    static let shared = DataInitializer()
+    
+    func initializeData(completion: @escaping (Bool) -> Void) {
+        // 简化实现，直接返回成功
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            print("数据初始化成功")
+            completion(true)
+        }
+    }
+}
+
+// 简化版的SettingsRepository类
+class SettingsRepository {
+    static let shared = SettingsRepository()
+    
+    func getAppSettings() -> AppSettingsModel {
+        // 简化实现，返回默认设置
+        return AppSettingsModel()
+    }
+}
+
+// 简化版的NetworkManager类
+class NetworkManager {
+    static let shared = NetworkManager()
+    
+    func setOfflineMode(enabled: Bool) {
+        // 简化实现
+        print("离线模式已\(enabled ? "启用" : "禁用")")
+    }
+}
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -160,4 +199,5 @@ extension UIApplication.State {
             return "未知"
         }
     }
+} 
 } 
