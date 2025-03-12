@@ -282,7 +282,10 @@ OfflineManager.shared.toggleOfflineMode()
 
 ### 数据存储
 
-- **Core Data/SwiftData**：存储用户信息、故事内容和设置
+- **SwiftData**：存储用户信息、故事内容和设置
+  - 实现了四个主要模型：`StoryModel`、`SpeechModel`、`UserSettingsModel`和`CacheRecordModel`
+  - 提供了`ModelManager`类用于模型操作和查询
+  - 详细信息请参阅[Models/SwiftData/README.md](Models/SwiftData/README.md)
 - **文件系统**：缓存语音文件和故事内容
 
 ## 项目结构
@@ -310,8 +313,8 @@ baobao/
 - [x] API集成测试
 - [x] 故事生成服务实现
 - [x] 语音合成服务实现
+- [x] SwiftData数据模型实现
 - [ ] 用户界面设计
-- [ ] 数据存储实现
 - [ ] 离线模式支持
 - [ ] 故事收藏功能
 - [ ] 应用测试和优化
@@ -365,3 +368,24 @@ baobao/
 
 - 项目维护者：宝宝故事团队
 - 邮箱：support@baobao.com 
+
+### 使用SwiftData模型
+
+```swift
+// 获取用户设置
+let settings = ModelManager.shared.getUserSettings(context: modelContext)
+
+// 获取收藏的故事
+let favoriteStories = ModelManager.shared.getStories(context: modelContext, isFavoriteOnly: true)
+
+// 添加新故事
+let newStory = StoryModel(
+    title: "新故事",
+    content: "这是一个新故事的内容...",
+    theme: .space,
+    characterName: "小明",
+    lengthType: .medium
+)
+modelContext.insert(newStory)
+try? modelContext.save()
+``` 
