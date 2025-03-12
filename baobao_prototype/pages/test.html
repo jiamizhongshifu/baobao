@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>宝宝故事测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #F2E9DE;
+            color: #333;
+        }
+        
+        h1 {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #000;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .button {
+            display: block;
+            background-color: #000;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>宝宝故事测试页面</h1>
+    
+    <div class="card">
+        <h2>WebView测试</h2>
+        <p>如果你能看到这个页面，说明WebView已经成功加载。</p>
+        <p id="status" class="success">✅ 页面加载成功</p>
+        <p>当前时间: <span id="current-time"></span></p>
+    </div>
+    
+    <div class="card">
+        <h2>API测试</h2>
+        <p>点击下面的按钮测试与原生API的通信：</p>
+        <button id="test-api" class="button">测试API</button>
+        <p id="api-result">结果将显示在这里...</p>
+    </div>
+    
+    <div class="card">
+        <h2>资源加载测试</h2>
+        <p>检查资源是否正确加载：</p>
+        <ul>
+            <li>CSS样式: <span id="css-status">检查中...</span></li>
+            <li>JavaScript: <span id="js-status">检查中...</span></li>
+            <li>字体: <span id="font-status">检查中...</span></li>
+        </ul>
+    </div>
+    
+    <script>
+        // 显示当前时间
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleString();
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // 检查资源加载
+        document.getElementById('css-status').textContent = '✅ 已加载';
+        document.getElementById('js-status').textContent = '✅ 已加载';
+        
+        // 检查字体加载
+        document.fonts.ready.then(function() {
+            document.getElementById('font-status').textContent = '✅ 已加载';
+        }).catch(function() {
+            document.getElementById('font-status').textContent = '❌ 加载失败';
+        });
+        
+        // 测试API
+        document.getElementById('test-api').addEventListener('click', function() {
+            var apiResult = document.getElementById('api-result');
+            apiResult.textContent = '正在测试API...';
+            
+            try {
+                // 检查是否在iOS环境中
+                if (window.webkit && window.webkit.messageHandlers) {
+                    apiResult.textContent = '✅ 检测到iOS WebKit环境';
+                    
+                    // 尝试调用原生API
+                    try {
+                        window.webkit.messageHandlers.pageLoaded.postMessage({
+                            page: 'test',
+                            status: 'success'
+                        });
+                        apiResult.textContent += '\n✅ 成功发送消息到原生代码';
+                    } catch (e) {
+                        apiResult.textContent += '\n❌ 发送消息失败: ' + e.message;
+                    }
+                } else {
+                    apiResult.textContent = '❌ 未检测到iOS WebKit环境';
+                }
+            } catch (e) {
+                apiResult.textContent = '❌ 测试失败: ' + e.message;
+            }
+        });
+        
+        // 通知原生代码页面已加载
+        try {
+            window.webkit.messageHandlers.pageLoaded.postMessage({
+                page: 'test',
+                status: 'success'
+            });
+            console.log('已通知原生代码页面加载成功');
+        } catch (e) {
+            console.log('无法通知原生代码页面已加载: ' + e.message);
+        }
+    </script>
+</body>
+</html> 

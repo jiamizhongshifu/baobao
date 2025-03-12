@@ -19,6 +19,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // 初始化所有服务
         initializeServices()
         
+        // 初始化应用数据
+        initializeAppData()
+        
         // 设置未捕获异常处理
         setupUncaughtExceptionHandler()
         

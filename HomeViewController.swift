@@ -15,6 +15,8 @@ class HomeViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
     private var retryButton: UIButton?
     private var loadingIndicator: UIActivityIndicatorView?
     private var errorLabel: UILabel?
+    private var navigationStartTime: TimeInterval?
+    private var resourceCount = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -159,30 +161,133 @@ class HomeViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
         errorLabel?.isHidden = true
         retryButton?.isHidden = true
         
-        // 获取HTML文件路径
-        guard let fileHelper = try? FileHelper() else {
-            showError(message: "无法初始化文件助手")
-            return
-        }
+        logger.info("📱 加载WebView开始")
         
-        do {
-            logger.info("📄 从文档目录加载home.html")
-            let htmlPath = try fileHelper.getFilePathInDocuments(fileName: "baobao_prototype/pages/home.html")
-            let htmlURL = URL(fileURLWithPath: htmlPath)
+        // 获取HTML文件路径
+        logger.info("🔍 获取HTML文件路径")
+        
+        // 直接从文档目录获取HTML文件路径
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let htmlPath = documentsPath.appendingPathComponent("baobao_prototype/pages/test.html")
+        
+        if FileManager.default.fileExists(atPath: htmlPath.path) {
+            logger.info("✅ 在文档目录中找到测试HTML文件: \(htmlPath.path)")
             
-            // 读取文件内容
-            let htmlContent = try String(contentsOf: htmlURL, encoding: .utf8)
-            logger.info("📄 文件内容长度: \(htmlContent.count) 字符")
-            logger.info("📄 文件内容前100字符: \(String(htmlContent.prefix(100)))")
+            // 获取基础URL（用于相对路径解析）
+            let baseURL = htmlPath.deletingLastPathComponent().deletingLastPathComponent()
+            logger.info("📂 基础目录: \(baseURL)")
             
-            // 获取基础URL
-            let baseURL = htmlURL.deletingLastPathComponent()
+            // 读取文件内容进行检查
+            do {
+                let htmlContent = try String(contentsOf: htmlPath, encoding: .utf8)
+                logger.info("📄 HTML文件内容长度: \(htmlContent.count) 字符")
+                logger.info("📄 HTML文件内容前100字符: \(String(htmlContent.prefix(100)))")
+                
+                // 注入调试脚本
+                let debugScript = WKUserScript(
+                    source: """
+                    console.originalLog = console.log;
+                    console.log = function(message) {
+                        console.originalLog(message);
+                        try {
+                            window.webkit.messageHandlers.log.postMessage({
+                                level: 'info',
+                                message: message
+                            });
+                        } catch(e) {}
+                    };
+                    
+                    console.originalError = console.error;
+                    console.error = function(message) {
+                        console.originalError(message);
+                        try {
+                            window.webkit.messageHandlers.log.postMessage({
+                                level: 'error',
+                                message: message
+                            });
+                        } catch(e) {}
+                    };
+                    
+                    window.onerror = function(message, source, lineno, colno, error) {
+                        try {
+                            window.webkit.messageHandlers.logError.postMessage({
+                                message: message,
+                                source: source,
+                                lineno: lineno,
+                                colno: colno,
+                                stack: error ? error.stack : 'No stack trace'
+                            });
+                        } catch(e) {}
+                        return false;
+                    };
+                    """,
+                    injectionTime: .atDocumentStart,
+                    forMainFrameOnly: false
+                )
+                
+                webView.configuration.userContentController.addUserScript(debugScript)
+                logger.info("✅ 注入错误捕获脚本完成")
+                
+                // 加载HTML文件
+                logger.info("📄 加载本地文件: \(htmlPath)")
+                webView.loadFileURL(htmlPath, allowingReadAccessTo: baseURL)
+            } catch {
+                logger.error("❌ 读取HTML文件内容失败: \(error.localizedDescription)")
+                showError(message: "无法读取HTML文件内容")
+            }
+        } else {
+            logger.error("❌ 在文档目录中未找到测试HTML文件，尝试加载home.html")
             
-            // 加载HTML
-            webView.loadFileURL(htmlURL, allowingReadAccessTo: baseURL)
-        } catch {
-            logger.error("❌ 加载HTML文件失败: \(error.localizedDescription)")
-            showError(message: "加载页面失败: \(error.localizedDescription)")
+            // 尝试加载home.html
+            let homeHtmlPath = documentsPath.appendingPathComponent("baobao_prototype/pages/home.html")
+            
+            if FileManager.default.fileExists(atPath: homeHtmlPath.path) {
+                logger.info("✅ 在文档目录中找到home.html文件: \(homeHtmlPath.path)")
+                let baseURL = homeHtmlPath.deletingLastPathComponent().deletingLastPathComponent()
+                webView.loadFileURL(homeHtmlPath, allowingReadAccessTo: baseURL)
+            } else {
+                logger.error("❌ 在文档目录中也未找到home.html文件")
+                
+                // 创建一个简单的HTML内容
+                let simpleHTML = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>宝宝故事</title>
+                    <style>
+                        body { font-family: -apple-system, sans-serif; margin: 20px; color: #333; background-color: #F2E9DE; }
+                        h1 { color: #000; }
+                        .card { background: #fff; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        button { background: #000; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>宝宝故事</h1>
+                    <div class="card">
+                        <h2>资源加载错误</h2>
+                        <p>无法找到必要的HTML文件。请确保应用安装正确。</p>
+                        <button onclick="location.reload()">刷新页面</button>
+                    </div>
+                    <script>
+                        // 通知原生代码页面已加载
+                        try {
+                            window.webkit.messageHandlers.pageLoaded.postMessage({
+                                page: 'error',
+                                status: 'error'
+                            });
+                        } catch (e) {
+                            console.log('无法通知原生代码页面已加载');
+                        }
+                    </script>
+                </body>
+                </html>
+                """
+                
+                logger.info("📄 加载简单HTML内容")
+                webView.loadHTMLString(simpleHTML, baseURL: nil)
+            }
         }
     }
     
@@ -203,12 +308,49 @@ class HomeViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
     
     // MARK: - WKNavigationDelegate
     
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        logger.info("🔄 WebView开始加载")
+    }
+    
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        logger.info("📄 WebView已开始接收内容")
+    }
+    
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logger.info("✅ 页面加载完成")
-        logger.info("📄 页面标题: \(webView.title ?? "无标题")")
+        // 计算加载时间
+        let loadTime = Date().timeIntervalSince1970 - (navigationStartTime ?? Date().timeIntervalSince1970)
+        logger.info("✅ WebView加载完成，耗时: \(String(format: "%.2f", loadTime))秒，加载资源数: \(resourceCount)")
+        
+        // 执行JavaScript获取页面标题
+        webView.evaluateJavaScript("document.title") { [weak self] (result, error) in
+            if let title = result as? String {
+                self?.logger.info("📄 页面标题: \(title)")
+            }
+        }
+        
+        // 执行JavaScript检查页面内容
+        webView.evaluateJavaScript("document.body.innerHTML.length") { [weak self] (result, error) in
+            if let length = result as? Int {
+                self?.logger.info("📄 页面内容长度: \(length) 字符")
+            }
+        }
+        
+        // 检查CSS是否加载
+        webView.evaluateJavaScript("document.styleSheets.length") { [weak self] (result, error) in
+            if let count = result as? Int {
+                self?.logger.info("📄 加载的样式表数量: \(count)")
+            }
+        }
+        
+        // 检查JS是否加载
+        webView.evaluateJavaScript("document.scripts.length") { [weak self] (result, error) in
+            if let count = result as? Int {
+                self?.logger.info("📄 加载的脚本数量: \(count)")
+            }
+        }
         
         // 延迟显示WebView，确保内容已完全渲染
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.webView.isHidden = false
             self?.loadingView?.isHidden = true
         }
@@ -265,5 +407,27 @@ class HomeViewController: UIViewController, WKNavigationDelegate, WKScriptMessag
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "pageLoaded")
         
         logger.info("🧹 HomeViewController 已释放")
+    }
+    
+    func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        // 接受所有证书，简化开发过程
+        completionHandler(.useCredential, URLCredential(trust: challenge.protectionSpace.serverTrust!))
+    }
+    
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        if let url = navigationAction.request.url {
+            logger.info("🔗 WebView导航请求: \(url)")
+            navigationStartTime = Date().timeIntervalSince1970
+            resourceCount = 0
+        }
+        decisionHandler(.allow)
+    }
+    
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        if let response = navigationResponse.response as? HTTPURLResponse {
+            logger.info("📥 WebView响应: \(response.statusCode)")
+        }
+        resourceCount += 1
+        decisionHandler(.allow)
     }
 } 
