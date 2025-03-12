@@ -14,9 +14,17 @@ struct SwiftDataExampleView: View {
     @State private var showingAddStory = false
     @State private var newStoryTitle = ""
     @State private var newStoryContent = ""
-    @State private var selectedTheme = StoryTheme.space
-    @State private var selectedLength = StoryLength.medium
+    @State private var selectedTheme = SDStoryTheme.space
+    @State private var selectedLength = SDStoryLength.medium
     @State private var characterName = "小明"
+    
+    // 使用依赖注入方式
+    private let modelManager: ModelManaging
+    
+    // 初始化方法，允许注入ModelManager
+    init(modelManager: ModelManaging = ModelManager()) {
+        self.modelManager = modelManager
+    }
     
     var body: some View {
         NavigationStack {
@@ -74,10 +82,10 @@ struct SwiftDataExampleView: View {
                 }
             }
             
-            Text("默认语音：\(settings.defaultVoiceType.rawValue)")
+            Text("默认语音：\(settings.defaultVoiceType?.rawValue ?? "")")
                 .font(.caption)
             
-            Text("上次使用角色：\(settings.lastUsedCharacterName)")
+            Text("上次使用角色：\(settings.lastUsedCharacterName ?? "")")
                 .font(.caption)
             
             Text("缓存设置：\(settings.maxCacheSizeMB)MB，\(settings.cacheExpiryDays)天过期")
@@ -102,13 +110,13 @@ struct SwiftDataExampleView: View {
                     TextField("角色名称", text: $characterName)
                     
                     Picker("故事主题", selection: $selectedTheme) {
-                        ForEach(StoryTheme.allCases, id: \.self) { theme in
+                        ForEach(SDStoryTheme.allCases, id: \.self) { theme in
                             Text(theme.rawValue).tag(theme)
                         }
                     }
                     
                     Picker("故事长度", selection: $selectedLength) {
-                        ForEach(StoryLength.allCases, id: \.self) { length in
+                        ForEach(SDStoryLength.allCases, id: \.self) { length in
                             Text(length.rawValue).tag(length)
                         }
                     }
@@ -135,14 +143,19 @@ struct SwiftDataExampleView: View {
     
     // 加载用户设置
     private func loadUserSettings() {
-        userSettings = ModelManager.shared.getUserSettings(context: modelContext)
+        userSettings = modelManager.getUserSettings(context: modelContext)
     }
     
     // 切换离线模式
     private func toggleOfflineMode() {
         if let settings = userSettings {
-            settings.toggleOfflineMode()
-            try? modelContext.save()
+            settings.isOfflineModeEnabled.toggle()
+            do {
+                try modelContext.save()
+            } catch {
+                print("保存离线模式设置失败: \(error.localizedDescription)")
+                // 可以在这里添加用户提示
+            }
         }
     }
     
@@ -161,20 +174,52 @@ struct SwiftDataExampleView: View {
         // 更新用户设置中的最后使用角色
         if let settings = userSettings {
             settings.lastUsedCharacterName = characterName
-            try? modelContext.save()
         }
         
-        // 重置表单
-        newStoryTitle = ""
-        newStoryContent = ""
+        do {
+            try modelContext.save()
+            // 重置表单
+            newStoryTitle = ""
+            newStoryContent = ""
+            showingAddStory = false
+        } catch {
+            print("保存新故事失败: \(error.localizedDescription)")
+            // 可以在这里添加用户提示
+        }
     }
     
     // 删除故事
-    private func deleteStories(at offsets: IndexSet) {
+    private func deleteStories(offsets: IndexSet) {
         for index in offsets {
             modelContext.delete(stories[index])
         }
-        try? modelContext.save()
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("删除故事失败: \(error.localizedDescription)")
+            // 可以在这里添加用户提示
+        }
+    }
+    
+    // 添加语音
+    private func addSpeech(for story: StoryModel, voiceType: SDVoiceType) {
+        let newSpeech = SpeechModel(
+            fileURL: "file:///tmp/speech_\(UUID().uuidString).mp3",
+            voiceType: voiceType,
+            fileSize: 1024 * 1024, // 1MB
+            duration: 60, // 60秒
+            isLocalTTS: false,
+            story: story
+        )
+        
+        modelContext.insert(newSpeech)
+        do {
+            try modelContext.save()
+        } catch {
+            print("保存语音失败: \(error.localizedDescription)")
+            // 可以在这里添加用户提示
+        }
     }
 }
 
@@ -198,7 +243,7 @@ struct StoryRowView: View {
                 .font(.caption)
             
             HStack {
-                Text("主题：\(story.storyTheme.rawValue)")
+                Text("主题：\(story.storyTheme?.rawValue ?? "")")
                     .font(.caption)
                 Spacer()
                 Text("阅读次数：\(story.readCount)")
@@ -215,7 +260,7 @@ struct StoryRowView: View {
 /// 故事详情视图
 struct StoryDetailView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var selectedVoiceType = VoiceType.xiaoMing
+    @State private var selectedVoiceType = SDVoiceType.xiaoMing
     
     let story: StoryModel
     
@@ -232,9 +277,9 @@ struct StoryDetailView: View {
                     VStack(alignment: .leading) {
                         Text("角色：\(story.characterName)")
                             .font(.subheadline)
-                        Text("主题：\(story.storyTheme.rawValue)")
+                        Text("主题：\(story.storyTheme?.rawValue ?? "")")
                             .font(.subheadline)
-                        Text("长度：\(story.storyLength.rawValue)")
+                        Text("长度：\(story.storyLengthType?.rawValue ?? "")")
                             .font(.subheadline)
                     }
                     
@@ -263,7 +308,7 @@ struct StoryDetailView: View {
                         .font(.headline)
                     
                     Picker("语音类型", selection: $selectedVoiceType) {
-                        ForEach(VoiceType.allCases, id: \.self) { voiceType in
+                        ForEach(SDVoiceType.allCases, id: \.self) { voiceType in
                             Text(voiceType.rawValue).tag(voiceType)
                         }
                     }
@@ -280,13 +325,13 @@ struct StoryDetailView: View {
                 }
                 
                 // 语音列表
-                if !story.speeches.isEmpty {
+                if let speeches = story.speeches, !speeches.isEmpty {
                     VStack(alignment: .leading) {
                         Text("已生成的语音")
                             .font(.headline)
                             .padding(.top)
                         
-                        ForEach(story.speeches) { speech in
+                        ForEach(speeches) { speech in
                             speechRow(speech)
                         }
                     }
@@ -305,7 +350,7 @@ struct StoryDetailView: View {
     private func speechRow(_ speech: SpeechModel) -> some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("语音：\(speech.voiceType.rawValue)")
+                Text("语音：\(speech.voiceType?.rawValue ?? "")")
                     .font(.subheadline)
                 
                 Text("大小：\(speech.formattedFileSize) • 时长：\(speech.formattedDuration)")
@@ -344,7 +389,7 @@ struct StoryDetailView: View {
         
         // 模拟添加一个新的语音记录
         let newSpeech = SpeechModel(
-            fileURL: URL(string: "file:///tmp/speech_\(UUID().uuidString).mp3")!,
+            fileURL: "file:///tmp/speech_\(UUID().uuidString).mp3",
             voiceType: selectedVoiceType,
             fileSize: 1024 * 1024, // 1MB
             duration: 60, // 60秒

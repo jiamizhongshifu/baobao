@@ -1,5 +1,8 @@
 import Foundation
 import os.log
+import SwiftData
+import Combine
+import baobao
 
 // MARK: - 配置管理器
 class BaoBaoConfigurationManager {
@@ -367,9 +370,9 @@ class StoryService {
                     let story = Story(
                         title: title,
                         content: storyContent,
-                        theme: self.extractThemeFromPrompt(prompt),
-                        childName: childName,
-                        childAge: childAge
+                        theme: StoryTheme(rawValue: self.extractThemeFromPrompt(prompt)) ?? .space,
+                        lengthType: .medium,
+                        createdAt: Date()
                     )
                     
                     self.logger.info("✅ 故事生成成功: \(title)")

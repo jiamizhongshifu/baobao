@@ -209,7 +209,8 @@ class DataService {
     
     // 获取宝宝的故事
     func getStories(forChildName childName: String) -> [Story] {
-        return stories.filter { $0.childName == childName }
+        // 由于Story类中没有childName属性，我们直接返回所有故事
+        return stories
     }
     
     // MARK: - 数据持久化

@@ -88,7 +88,7 @@ struct SwiftDataUsageExamples {
     /// 故事详情视图示例
     struct StoryDetailView: View {
         @Environment(\.modelContext) private var modelContext
-        @State private var selectedVoiceType: VoiceType = .xiaoMing
+        @State private var selectedVoiceType: SDVoiceType = .xiaoMing
         
         let story: StoryModel
         
@@ -119,7 +119,7 @@ struct SwiftDataUsageExamples {
                             .font(.headline)
                         
                         Picker("语音类型", selection: $selectedVoiceType) {
-                            ForEach(VoiceType.allVoiceTypes, id: \.self) { voiceType in
+                            ForEach(SDVoiceType.allVoiceTypes, id: \.self) { voiceType in
                                 Text(voiceType.rawValue).tag(voiceType)
                             }
                         }
@@ -186,7 +186,7 @@ struct SwiftDataUsageExamples {
         }
         
         /// 生成新故事
-        func generateStory(theme: StoryTheme, characterName: String, length: StoryLength, completion: @escaping (Result<StoryModel, Error>) -> Void) {
+        func generateStory(theme: SDStoryTheme, characterName: String, length: SDStoryLength, completion: @escaping (Result<StoryModel, Error>) -> Void) {
             // 这里应该调用AI服务生成故事内容
             // 示例中直接创建一个假故事
             
@@ -217,7 +217,7 @@ struct SwiftDataUsageExamples {
         }
         
         /// 获取特定主题的故事
-        func getStoriesByTheme(theme: StoryTheme) -> [StoryModel] {
+        func getStoriesByTheme(theme: SDStoryTheme) -> [StoryModel] {
             return ModelManager.shared.getStoriesByTheme(context: modelContext, theme: theme)
         }
         
@@ -295,7 +295,7 @@ struct SwiftDataUsageExamples {
         }
         
         /// 更新默认语音类型
-        func updateDefaultVoiceType(_ voiceType: VoiceType) {
+        func updateDefaultVoiceType(_ voiceType: SDVoiceType) {
             let settings = getUserSettings()
             settings.updateDefaultVoiceType(voiceType)
             try? modelContext.save()
@@ -322,11 +322,8 @@ struct SwiftDataAppExample: App {
     let modelContainer: ModelContainer
     
     init() {
-        do {
-            modelContainer = ModelContainerSetup.getModelContainer()
-        } catch {
-            fatalError("无法创建ModelContainer: \(error.localizedDescription)")
-        }
+        // 直接调用ModelContainerSetup.getModelContainer()，因为它内部已经处理了错误
+        modelContainer = ModelContainerSetup.getModelContainer()
     }
     
     var body: some Scene {

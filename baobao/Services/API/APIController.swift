@@ -207,7 +207,7 @@ extension APIController: WKScriptMessageHandler {
                     "title": story.title,
                     "content": story.content,
                     "theme": story.theme,
-                    "childName": story.childName,
+                    "childName": "未知",
                     "createdAt": ISO8601DateFormatter().string(from: story.createdAt)
                 ]
                 
@@ -300,8 +300,7 @@ extension APIController: WKScriptMessageHandler {
               let storyDict = params["story"] as? [String: Any],
               let title = storyDict["title"] as? String,
               let content = storyDict["content"] as? String,
-              let theme = storyDict["theme"] as? String,
-              let childName = storyDict["childName"] as? String else {
+              let theme = storyDict["theme"] as? String else {
             logger.error("❌ 保存故事参数无效")
             let error = NSError(domain: "com.baobao.app", code: 400, userInfo: [NSLocalizedDescriptionKey: "参数无效"])
             sendResponse(to: webView, callbackID: callbackID, data: nil, error: error)
@@ -316,9 +315,8 @@ extension APIController: WKScriptMessageHandler {
         let story = Story(
             title: title,
             content: content,
-            theme: theme,
-            childName: childName,
-            childAge: 8, // 默认年龄，可以从请求参数中获取实际值
+            theme: StoryTheme(rawValue: theme) ?? .fairytale, // 默认为童话王国主题
+            lengthType: .medium, // 默认为中篇
             audioURL: audioURL?.absoluteString
         )
         
@@ -350,7 +348,7 @@ extension APIController: WKScriptMessageHandler {
                 "title": story.title,
                 "content": story.content,
                 "theme": story.theme,
-                "childName": story.childName,
+                "childName": "未知",
                 "createdAt": ISO8601DateFormatter().string(from: story.createdAt)
             ]
             
@@ -384,7 +382,7 @@ extension APIController: WKScriptMessageHandler {
                 "title": story.title,
                 "content": story.content,
                 "theme": story.theme,
-                "childName": story.childName,
+                "childName": "未知",
                 "createdAt": ISO8601DateFormatter().string(from: story.createdAt)
             ]
             

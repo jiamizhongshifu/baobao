@@ -7,6 +7,7 @@
 
 import UIKit
 import os.log
+import SwiftData
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {

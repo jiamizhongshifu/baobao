@@ -6,7 +6,7 @@ import SwiftData
 final class UserSettingsModel {
     // 基本属性
     @Attribute(.unique) var id: String
-    var defaultVoiceTypeString: String // 存储VoiceType的rawValue
+    var defaultVoiceTypeString: String // 存储SDVoiceType的rawValue
     var isOfflineModeEnabled: Bool
     var autoDownloadNewStories: Bool
     var syncOnWifiOnly: Bool
@@ -16,15 +16,15 @@ final class UserSettingsModel {
     var lastUpdated: Date
     
     // 计算属性
-    var defaultVoiceType: VoiceType? {
-        get { return VoiceType(rawValue: defaultVoiceTypeString) }
+    var defaultVoiceType: SDVoiceType? {
+        get { return SDVoiceType(rawValue: defaultVoiceTypeString) }
         set { if let newValue = newValue { defaultVoiceTypeString = newValue.rawValue } }
     }
     
     // 初始化方法
     init(
         id: String = "userSettings", // 使用固定ID，确保只有一个设置实例
-        defaultVoiceType: VoiceType = .xiaoMing,
+        defaultVoiceType: SDVoiceType = .xiaoMing,
         isOfflineModeEnabled: Bool = false,
         autoDownloadNewStories: Bool = true,
         syncOnWifiOnly: Bool = true,
@@ -54,7 +54,7 @@ extension UserSettingsModel {
     }
     
     // 更新默认语音类型
-    func updateDefaultVoiceType(_ voiceType: VoiceType) {
+    func updateDefaultVoiceType(_ voiceType: SDVoiceType) {
         defaultVoiceTypeString = voiceType.rawValue
         lastUpdated = Date()
     }
