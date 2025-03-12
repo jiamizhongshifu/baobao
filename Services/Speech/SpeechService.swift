@@ -56,18 +56,22 @@ enum VoiceType: String, CaseIterable {
             return "有趣的机器人，适合讲述科幻故事"
         }
     }
+    
+    /// 从字符串创建VoiceType
+    static func from(string: String) -> VoiceType? {
+        return VoiceType.allCases.first { $0.rawValue == string }
+    }
 }
 
-/// 语音服务错误类型
+/// 语音合成错误类型
 enum SpeechServiceError: Error {
     case synthesizeFailed
     case invalidParameters
-    case fileError
     case networkError(Error)
     case apiError(Int, String)
     case rateLimited
     case timeout
-    case parseError
+    case audioError
     case offlineMode
     case noCache
     case unknown(Error)
@@ -78,8 +82,6 @@ enum SpeechServiceError: Error {
             return "语音合成失败"
         case .invalidParameters:
             return "无效的参数"
-        case .fileError:
-            return "文件操作错误"
         case .networkError(let error):
             return "网络错误: \(error.localizedDescription)"
         case .apiError(let code, let message):
@@ -88,8 +90,8 @@ enum SpeechServiceError: Error {
             return "API请求频率超限"
         case .timeout:
             return "请求超时"
-        case .parseError:
-            return "解析响应失败"
+        case .audioError:
+            return "音频处理错误"
         case .offlineMode:
             return "当前处于离线模式"
         case .noCache:
@@ -108,12 +110,14 @@ enum SpeechSynthesisStatus {
     case failure(SpeechServiceError)
 }
 
-/// 语音服务
+/// 语音服务，负责语音合成和管理
 class SpeechService {
-    // MARK: - 属性
+    // MARK: - 单例
     
-    /// 单例实例
+    /// 共享实例
     static let shared = SpeechService()
+    
+    // MARK: - 属性
     
     /// 日志记录器
     private let logger = Logger(subsystem: "com.baobao.speech", category: "SpeechService")
@@ -127,13 +131,19 @@ class SpeechService {
     /// 网络管理器
     private let networkManager = NetworkManager.shared
     
-    /// 本地TTS合成器
+    /// 设置仓库
+    private let settingsRepository = SettingsRepository.shared
+    
+    /// 孩子仓库
+    private let childRepository = ChildRepository.shared
+    
+    /// 语音合成器
     private let synthesizer = AVSpeechSynthesizer()
     
-    /// 当前合成状态
+    /// 语音合成状态
     @Published private(set) var synthesisStatus: SpeechSynthesisStatus = .idle
     
-    /// 合成状态发布者
+    /// 语音合成状态发布者
     var synthesisStatusPublisher: AnyPublisher<SpeechSynthesisStatus, Never> {
         return $synthesisStatus.eraseToAnyPublisher()
     }
@@ -145,7 +155,7 @@ class SpeechService {
     
     private init() {
         // 监听网络状态变化
-        networkManager.statusPublisher
+        networkManager.networkStatusPublisher
             .sink { [weak self] status in
                 self?.logger.info("网络状态变化: \(status)")
             }
@@ -157,6 +167,13 @@ class SpeechService {
                 self?.logger.info("离线模式变化: \(isOffline ? "启用" : "禁用")")
             }
             .store(in: &cancellables)
+            
+        // 监听设置变更
+        settingsRepository.settingsChangesPublisher
+            .sink { [weak self] settings in
+                self?.logger.info("应用设置变更: useLocalTTSByDefault=\(settings.useLocalTTSByDefault)")
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - 公共方法
@@ -165,9 +182,10 @@ class SpeechService {
     /// - Parameters:
     ///   - text: 要合成的文本
     ///   - voiceType: 语音类型
+    ///   - childId: 孩子ID（可选，用于获取语音偏好）
     ///   - forceRefresh: 是否强制刷新（忽略缓存）
     ///   - completion: 完成回调
-    func synthesizeSpeech(text: String, voiceType: VoiceType, forceRefresh: Bool = false, completion: @escaping (Result<URL, SpeechServiceError>) -> Void) {
+    func synthesizeSpeech(text: String, voiceType: VoiceType? = nil, childId: String? = nil, forceRefresh: Bool = false, completion: @escaping (Result<URL, SpeechServiceError>) -> Void) {
         // 更新状态
         synthesisStatus = .synthesizing
         
@@ -179,8 +197,14 @@ class SpeechService {
             return
         }
         
+        // 确定使用的语音类型
+        let finalVoiceType = determineVoiceType(voiceType: voiceType, childId: childId)
+        
+        // 获取语音偏好设置
+        let voicePreference = getVoicePreference(childId: childId)
+        
         // 生成缓存键
-        let cacheKey = generateCacheKey(text: text, voiceType: voiceType)
+        let cacheKey = generateCacheKey(text: text, voiceType: finalVoiceType)
         
         // 检查缓存（如果不强制刷新）
         if !forceRefresh, let cachedFileURL = cacheManager.fileURLFromCache(forKey: cacheKey, type: .speech) {
@@ -191,11 +215,11 @@ class SpeechService {
         }
         
         // 检查网络状态和配置
-        let useLocalTTS = configManager.useLocalTTSByDefault || !networkManager.canPerformNetworkRequest()
+        let useLocalTTS = voicePreference?.useLocalTTS ?? settingsRepository.getAppSettings().useLocalTTSByDefault || !networkManager.canPerformNetworkRequest()
         
         if useLocalTTS {
             // 使用本地TTS
-            synthesizeWithLocalTTS(text: text, voiceType: voiceType, cacheKey: cacheKey) { [weak self] result in
+            synthesizeWithLocalTTS(text: text, voiceType: finalVoiceType, speechRate: voicePreference?.speechRate ?? 1.0, volume: voicePreference?.volume ?? 1.0, cacheKey: cacheKey) { [weak self] result in
                 guard let self = self else { return }
                 
                 switch result {
@@ -208,8 +232,8 @@ class SpeechService {
                 }
             }
         } else {
-            // 使用Azure语音服务
-            synthesizeWithAzure(text: text, voiceType: voiceType, cacheKey: cacheKey) { [weak self] result in
+            // 使用Azure TTS
+            synthesizeWithAzureTTS(text: text, voiceType: finalVoiceType, speechRate: voicePreference?.speechRate ?? 1.0, volume: voicePreference?.volume ?? 1.0, cacheKey: cacheKey) { [weak self] result in
                 guard let self = self else { return }
                 
                 switch result {
@@ -217,12 +241,11 @@ class SpeechService {
                     self.synthesisStatus = .success(fileURL)
                     completion(.success(fileURL))
                 case .failure(let error):
-                    // 如果Azure失败，尝试使用本地TTS作为备选
+                    // 如果Azure TTS失败，尝试使用本地TTS作为备选
                     if self.configManager.useLocalFallback {
-                        self.logger.info("Azure语音合成失败，尝试使用本地TTS作为备选")
-                        
-                        self.synthesizeWithLocalTTS(text: text, voiceType: voiceType, cacheKey: cacheKey) { result in
-                            switch result {
+                        self.logger.info("Azure TTS失败，尝试使用本地TTS作为备选")
+                        self.synthesizeWithLocalTTS(text: text, voiceType: finalVoiceType, speechRate: voicePreference?.speechRate ?? 1.0, volume: voicePreference?.volume ?? 1.0, cacheKey: cacheKey, completion: { fallbackResult in
+                            switch fallbackResult {
                             case .success(let fileURL):
                                 self.synthesisStatus = .success(fileURL)
                                 completion(.success(fileURL))
@@ -230,7 +253,7 @@ class SpeechService {
                                 self.synthesisStatus = .failure(fallbackError)
                                 completion(.failure(fallbackError))
                             }
-                        }
+                        })
                     } else {
                         self.synthesisStatus = .failure(error)
                         completion(.failure(error))
@@ -240,79 +263,63 @@ class SpeechService {
         }
     }
     
-    /// 预合成语音（用于预缓存）
-    /// - Parameters:
-    ///   - text: 要合成的文本
-    ///   - voiceType: 语音类型
-    func preSynthesizeSpeech(text: String, voiceType: VoiceType) {
-        // 生成缓存键
-        let cacheKey = generateCacheKey(text: text, voiceType: voiceType)
-        
-        // 检查缓存是否已存在
-        if cacheManager.hasCached(forKey: cacheKey, type: .speech) {
-            logger.info("语音已缓存，跳过预合成: \(cacheKey)")
-            return
-        }
-        
-        // 检查网络状态
-        if !networkManager.canPerformNetworkRequest() {
-            logger.warning("无法预合成语音：当前处于离线模式或网络不可用")
-            return
-        }
-        
-        // 使用Azure语音服务
-        synthesizeWithAzure(text: text, voiceType: voiceType, cacheKey: cacheKey) { [weak self] result in
-            guard let self = self else { return }
-            
-            switch result {
-            case .success(_):
-                self.logger.info("语音预合成成功: \(cacheKey)")
-            case .failure(let error):
-                self.logger.error("语音预合成失败: \(error.localizedDescription)")
-                
-                // 如果Azure失败，尝试使用本地TTS作为备选
-                if self.configManager.useLocalFallback {
-                    self.logger.info("尝试使用本地TTS作为备选进行预合成")
-                    
-                    self.synthesizeWithLocalTTS(text: text, voiceType: voiceType, cacheKey: cacheKey) { result in
-                        switch result {
-                        case .success(_):
-                            self.logger.info("使用本地TTS预合成成功: \(cacheKey)")
-                        case .failure(let fallbackError):
-                            self.logger.error("使用本地TTS预合成失败: \(fallbackError.localizedDescription)")
-                        }
-                    }
-                }
-            }
-        }
+    /// 获取所有可用的语音类型
+    func getAllVoiceTypes() -> [VoiceType] {
+        return VoiceType.allCases
     }
     
-    /// 清除语音缓存
-    func clearSpeechCache() {
-        cacheManager.clearCache(type: .speech)
-        logger.info("语音缓存已清除")
+    /// 获取孩子的语音偏好
+    func getVoicePreference(childId: String?) -> VoicePreferenceModel? {
+        guard let childId = childId else { return nil }
+        
+        if let child = childRepository.getChild(withId: childId) {
+            return child.voicePreference
+        }
+        
+        return nil
     }
     
-    /// 获取语音缓存大小
-    /// - Returns: 缓存大小（字节）
-    func getSpeechCacheSize() -> Int64 {
-        return cacheManager.cacheSize(type: .speech)
+    /// 更新孩子的语音偏好
+    func updateVoicePreference(childId: String, voiceType: VoiceType, speechRate: Double = 1.0, volume: Double = 1.0, useLocalTTS: Bool = false) {
+        childRepository.updateVoicePreference(
+            childId: childId,
+            voiceType: voiceType.rawValue,
+            speechRate: speechRate,
+            volume: volume,
+            useLocalTTS: useLocalTTS
+        )
     }
     
     // MARK: - 私有方法
     
+    /// 确定使用的语音类型
+    private func determineVoiceType(voiceType: VoiceType?, childId: String?) -> VoiceType {
+        // 如果指定了语音类型，直接使用
+        if let voiceType = voiceType {
+            return voiceType
+        }
+        
+        // 如果指定了孩子ID，尝试获取孩子的语音偏好
+        if let childId = childId, let child = childRepository.getChild(withId: childId), let voicePreference = child.voicePreference {
+            if let preferredVoiceType = VoiceType.from(string: voicePreference.preferredVoiceType) {
+                return preferredVoiceType
+            }
+        }
+        
+        // 使用默认语音类型
+        let defaultVoiceTypeString = configManager.defaultVoiceType
+        return VoiceType.from(string: defaultVoiceTypeString) ?? .pingPing
+    }
+    
     /// 生成缓存键
     private func generateCacheKey(text: String, voiceType: VoiceType) -> String {
         // 使用文本的哈希值和语音类型生成缓存键
-        let textHash = String(text.hash)
-        return "\(textHash)_\(voiceType.rawValue)"
-            .replacingOccurrences(of: " ", with: "_")
-            .folding(options: .diacriticInsensitive, locale: .current)
-            .lowercased()
+        let textHash = text.hash
+        return "speech_\(voiceType.rawValue)_\(textHash)".replacingOccurrences(of: " ", with: "_")
     }
     
     /// 使用Azure语音服务合成语音
-    private func synthesizeWithAzure(text: String, voiceType: VoiceType, cacheKey: String, completion: @escaping (Result<URL, SpeechServiceError>) -> Void) {
+    private func synthesizeWithAzureTTS(text: String, voiceType: VoiceType, speechRate: Double, volume: Double, cacheKey: String, completion: @escaping (Result<URL, SpeechServiceError>) -> Void) {
         // 构建请求URL
         guard let url = URL(string: configManager.speechSynthesisEndpoint) else {
             completion(.failure(.invalidParameters))
@@ -409,7 +416,7 @@ class SpeechService {
     }
     
     /// 使用本地TTS合成语音
-    private func synthesizeWithLocalTTS(text: String, voiceType: VoiceType, cacheKey: String, completion: @escaping (Result<URL, SpeechServiceError>) -> Void) {
+    private func synthesizeWithLocalTTS(text: String, voiceType: VoiceType, speechRate: Double, volume: Double, cacheKey: String, completion: @escaping (Result<URL, SpeechServiceError>) -> Void) {
         // 创建临时文件URL
         let tempDir = FileManager.default.temporaryDirectory
         let tempFileURL = tempDir.appendingPathComponent("\(UUID().uuidString).m4a")
@@ -429,9 +436,9 @@ class SpeechService {
         // 创建语音合成请求
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(identifier: voiceType.localVoiceIdentifier)
-        utterance.rate = 0.5 // 语速
+        utterance.rate = speechRate
         utterance.pitchMultiplier = 1.0 // 音调
-        utterance.volume = 1.0 // 音量
+        utterance.volume = volume
         
         // 设置音频缓冲区
         let inputNode = audioEngine.inputNode

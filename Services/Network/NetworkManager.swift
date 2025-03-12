@@ -50,7 +50,7 @@ class NetworkManager {
     private let monitorQueue = DispatchQueue(label: "com.baobao.network.monitor")
     
     /// 当前网络状态
-    @Published private(set) var status: NetworkStatus = .unknown
+    @Published private(set) var networkStatus: NetworkStatus = .unknown
     
     /// 当前连接类型
     @Published private(set) var connectionType: ConnectionType = .none
@@ -59,8 +59,8 @@ class NetworkManager {
     @Published private(set) var isOfflineMode: Bool = false
     
     /// 网络状态发布者
-    var statusPublisher: AnyPublisher<NetworkStatus, Never> {
-        return $status.eraseToAnyPublisher()
+    var networkStatusPublisher: AnyPublisher<NetworkStatus, Never> {
+        return $networkStatus.eraseToAnyPublisher()
     }
     
     /// 连接类型发布者
@@ -76,95 +76,68 @@ class NetworkManager {
     // MARK: - 初始化
     
     private init() {
-        setupNetworkMonitoring()
-        
-        // 从用户默认设置中加载离线模式状态
-        isOfflineMode = UserDefaults.standard.bool(forKey: "isOfflineMode")
+        startMonitoring()
     }
     
     // MARK: - 公共方法
     
-    /// 启用离线模式
-    func enableOfflineMode() {
-        isOfflineMode = true
-        UserDefaults.standard.set(true, forKey: "isOfflineMode")
-        logger.info("已启用离线模式")
+    /// 设置离线模式
+    func setOfflineMode(enabled: Bool) {
+        isOfflineMode = enabled
+        logger.info("离线模式已\(enabled ? "启用" : "禁用")")
     }
     
-    /// 禁用离线模式
-    func disableOfflineMode() {
-        isOfflineMode = false
-        UserDefaults.standard.set(false, forKey: "isOfflineMode")
-        logger.info("已禁用离线模式")
-    }
-    
-    /// 切换离线模式
-    func toggleOfflineMode() {
-        isOfflineMode.toggle()
-        UserDefaults.standard.set(isOfflineMode, forKey: "isOfflineMode")
-        logger.info("已切换离线模式: \(isOfflineMode ? "启用" : "禁用")")
-    }
-    
-    /// 检查是否可以执行网络请求
-    /// - Returns: 是否可以执行网络请求
+    /// 是否可以执行网络请求
     func canPerformNetworkRequest() -> Bool {
-        // 如果处于离线模式，不允许执行网络请求
-        if isOfflineMode {
-            return false
-        }
-        
-        // 如果网络已连接，允许执行网络请求
-        return status.isConnected
+        return networkStatus == .connected && !isOfflineMode
     }
     
-    /// 检查是否可以执行同步
-    /// - Returns: 是否可以执行同步
-    func canPerformSync() -> Bool {
-        // 如果处于离线模式，不允许执行同步
-        if isOfflineMode {
-            return false
-        }
-        
-        // 如果配置为仅在WiFi下同步，检查当前是否为WiFi连接
-        if ConfigurationManager.shared.syncOnWifiOnly {
-            return connectionType.isWifi && status.isConnected
-        }
-        
-        // 否则，只要网络已连接，就允许执行同步
-        return status.isConnected
+    /// 是否连接到WiFi
+    var isWifiConnected: Bool {
+        return networkStatus == .connected && connectionType == .wifi
     }
     
     // MARK: - 私有方法
     
-    /// 设置网络监视
-    private func setupNetworkMonitoring() {
+    /// 开始监控网络状态
+    private func startMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self = self else { return }
             
-            // 更新网络状态
-            if path.status == .satisfied {
-                self.status = .connected
-            } else {
-                self.status = .disconnected
+            DispatchQueue.main.async {
+                // 更新网络状态
+                if path.status == .satisfied {
+                    self.networkStatus = .connected
+                } else {
+                    self.networkStatus = .disconnected
+                }
+                
+                // 更新连接类型
+                if path.usesInterfaceType(.wifi) {
+                    self.connectionType = .wifi
+                } else if path.usesInterfaceType(.cellular) {
+                    self.connectionType = .cellular
+                } else if path.usesInterfaceType(.wiredEthernet) {
+                    self.connectionType = .wiredEthernet
+                } else if self.networkStatus == .connected {
+                    self.connectionType = .other
+                } else {
+                    self.connectionType = .none
+                }
+                
+                self.logger.info("网络状态变化: \(self.networkStatus), 连接类型: \(self.connectionType)")
             }
-            
-            // 更新连接类型
-            if path.usesInterfaceType(.wifi) {
-                self.connectionType = .wifi
-            } else if path.usesInterfaceType(.cellular) {
-                self.connectionType = .cellular
-            } else if path.usesInterfaceType(.wiredEthernet) {
-                self.connectionType = .wiredEthernet
-            } else if path.status == .satisfied {
-                self.connectionType = .other
-            } else {
-                self.connectionType = .none
-            }
-            
-            self.logger.info("网络状态更新: \(self.status), 连接类型: \(self.connectionType)")
         }
         
-        // 开始监视
         monitor.start(queue: monitorQueue)
+    }
+    
+    /// 停止监控网络状态
+    private func stopMonitoring() {
+        monitor.cancel()
+    }
+    
+    deinit {
+        stopMonitoring()
     }
 } 
